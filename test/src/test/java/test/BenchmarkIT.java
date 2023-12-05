@@ -53,6 +53,11 @@ public class BenchmarkIT {
         run(new MaximumPossibleIT());
     }
 
+    @Benchmark
+    public void shouldSerializeJsonP() {
+        run(new JsonPIT());
+    }
+
     private static void run(AbstractJsonIT it) {
         it.shouldSerialize();
     }

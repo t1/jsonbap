@@ -13,10 +13,10 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.BDDAssertions.then;
 
 abstract class AbstractJsonIT {
-    private static final int N = 2;
-    private static final Object DATA = IntStream.range(0, N - 1).mapToObj(AbstractJsonIT::person)
+    private static final int N = 5;
+    private static final List<Person> DATA = IntStream.range(0, N).mapToObj(AbstractJsonIT::person)
         .collect(toList());
-    private static final String JSON = IntStream.range(0, N - 1).mapToObj(AbstractJsonIT::json)
+    private static final String JSON = IntStream.range(0, N).mapToObj(AbstractJsonIT::json)
         .collect(joining(",", "[", "]"));
 
     @Test
