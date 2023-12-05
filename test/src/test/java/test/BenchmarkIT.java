@@ -49,8 +49,8 @@ public class BenchmarkIT {
     }
 
     @Benchmark
-    public void shouldSerializeMaximumPossible() {
-        run(new MaximumPossibleIT());
+    public void shouldSerializeStringWriter() {
+        run(new StringWriterIT());
     }
 
     @Benchmark

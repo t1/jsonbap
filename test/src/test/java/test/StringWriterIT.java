@@ -9,7 +9,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.List;
 
-public class MaximumPossibleIT extends AbstractJsonIT {
+public class StringWriterIT extends AbstractJsonIT {
     @SneakyThrows(IOException.class)
     @Override String toJson(Object object) {
         @SuppressWarnings("unchecked")
