@@ -10,7 +10,7 @@ public class Iterable$$JsonbWriter implements JsonbWriter<Iterable<?>, JsonGener
         out.writeStartArray();
         for (Object item : object) {
             if (item != null) {
-                ApJsonbProvider.jsonbWriterFor(item).toJson(item, out, context);
+                ApJsonbProvider.jsonbWriterFor(item.getClass()).toJson(item, out, context);
             }
         }
         out.writeEnd();

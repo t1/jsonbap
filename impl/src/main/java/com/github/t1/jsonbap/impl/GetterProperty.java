@@ -87,7 +87,7 @@ abstract class GetterProperty implements Property {
                     .append("        if (").append(valueExpression).append(" != null) {\n")
                     .append("            out.writeKey(\"").append(name()).append("\");\n")
                     .append("            ApJsonbProvider.jsonbWriterFor(").append(valueExpression)
-                    .append(").toJson(").append(valueExpression).append(", out, context);\n")
+                    .append(".getClass()).toJson(").append(valueExpression).append(", out, context);\n")
                     .append("        }\n");
         }
     }
@@ -103,7 +103,7 @@ abstract class GetterProperty implements Property {
                     .append("        if (").append(valueExpression).append(" != null) {\n")
                     .append("            out.writeKey(\"").append(name()).append("\");\n")
                     /**/.append("            ApJsonbProvider.jsonbWriterFor(").append(valueExpression)
-                    /**/.append(").toJson(").append(valueExpression).append(", out, context);\n")
+                    /**/.append(".getClass()).toJson(").append(valueExpression).append(", out, context);\n")
                     .append("        }\n");
         }
     }

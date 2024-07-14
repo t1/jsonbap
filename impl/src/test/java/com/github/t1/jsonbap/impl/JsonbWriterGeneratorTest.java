@@ -51,42 +51,44 @@ class JsonbWriterGeneratorTest {
             generator.generate(typeGenerator);
         }
         then(ENV.getCreatedResource(SOURCE_OUTPUT, Person.class.getPackage().getName(), className)).isEqualTo(
-                "package com.github.t1.jsonbap.impl;\n" +
-                "\n" +
-                "import javax.annotation.processing.Generated;\n" +
-                "\n" +
-                "import com.github.t1.jsonbap.api.JsonbWriter;\n" +
-                "\n" +
-                "import jakarta.json.stream.JsonGenerator;\n" +
-                "\n" +
-                "@Generated(\"com.github.t1.jsonbap.impl.JsonbAnnotationProcessor\")\n" +
-                "public class Person$$JsonbWriter implements JsonbWriter<Person, JsonGeneratorContext> {\n" +
-                "    @Override\n" +
-                "    public void toJson(Person object, JsonGenerator out, JsonGeneratorContext context) {\n" +
-                "        out.writeStartObject();\n" +
-                "        if (object.getAddress() != null) {\n" +
-                "            out.writeKey(\"address\");\n" +
-                "            ApJsonbProvider.jsonbWriterFor(object.getAddress()).toJson(object.getAddress(), out, context);\n" +
-                "        }\n" +
-                "        out.write(\"age\", object.getAge());\n" +
-                "        if (object.getFirstName() != null) {\n" +
-                "            out.write(\"firstName\", object.getFirstName());\n" +
-                "        } else if (context.writeNullValues()) {\n" +
-                "            out.writeNull(\"firstName\");\n" +
-                "        }\n" +
-                "        if (object.getLastName() != null) {\n" +
-                "            out.write(\"lastName\", object.getLastName());\n" +
-                "        } else if (context.writeNullValues()) {\n" +
-                "            out.writeNull(\"lastName\");\n" +
-                "        }\n" +
-                "        if (object.getRoles() != null) {\n" +
-                "            out.writeKey(\"roles\");\n" +
-                "            ApJsonbProvider.jsonbWriterFor(object.getRoles()).toJson(object.getRoles(), out, context);\n" +
-                "        }\n" +
-                "        out.writeEnd();\n" +
-                "    }\n" +
-                "\n" +
-                "}\n");
+                """
+                        package com.github.t1.jsonbap.impl;
+
+                        import javax.annotation.processing.Generated;
+
+                        import com.github.t1.jsonbap.api.JsonbWriter;
+
+                        import jakarta.json.stream.JsonGenerator;
+
+                        @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
+                        public class Person$$JsonbWriter implements JsonbWriter<Person, JsonGeneratorContext> {
+                            @Override
+                            public void toJson(Person object, JsonGenerator out, JsonGeneratorContext context) {
+                                out.writeStartObject();
+                                if (object.getAddress() != null) {
+                                    out.writeKey("address");
+                                    ApJsonbProvider.jsonbWriterFor(object.getAddress().getClass()).toJson(object.getAddress(), out, context);
+                                }
+                                out.write("age", object.getAge());
+                                if (object.getFirstName() != null) {
+                                    out.write("firstName", object.getFirstName());
+                                } else if (context.writeNullValues()) {
+                                    out.writeNull("firstName");
+                                }
+                                if (object.getLastName() != null) {
+                                    out.write("lastName", object.getLastName());
+                                } else if (context.writeNullValues()) {
+                                    out.writeNull("lastName");
+                                }
+                                if (object.getRoles() != null) {
+                                    out.writeKey("roles");
+                                    ApJsonbProvider.jsonbWriterFor(object.getRoles().getClass()).toJson(object.getRoles(), out, context);
+                                }
+                                out.writeEnd();
+                            }
+
+                        }
+                        """);
     }
 
     @Test
@@ -101,47 +103,49 @@ class JsonbWriterGeneratorTest {
             generator.generate(typeGenerator);
         }
         then(ENV.getCreatedResource(SOURCE_OUTPUT, Address.class.getPackage().getName(), className)).isEqualTo(
-                "package com.github.t1.jsonbap.impl;\n" +
-                "\n" +
-                "import javax.annotation.processing.Generated;\n" +
-                "\n" +
-                "import com.github.t1.jsonbap.api.JsonbWriter;\n" +
-                "\n" +
-                "import jakarta.json.stream.JsonGenerator;\n" +
-                "\n" +
-                "@Generated(\"com.github.t1.jsonbap.impl.JsonbAnnotationProcessor\")\n" +
-                "public class Address$$JsonbWriter implements JsonbWriter<Address, JsonGeneratorContext> {\n" +
-                "    @Override\n" +
-                "    public void toJson(Address object, JsonGenerator out, JsonGeneratorContext context) {\n" +
-                "        out.writeStartObject();\n" +
-                "        if (object.getCity() != null) {\n" +
-                "            out.write(\"city\", object.getCity());\n" +
-                "        } else if (context.writeNullValues()) {\n" +
-                "            out.writeNull(\"city\");\n" +
-                "        }\n" +
-                "        if (object.getCountry() != null) {\n" +
-                "            out.write(\"country\", object.getCountry());\n" +
-                "        } else if (context.writeNullValues()) {\n" +
-                "            out.writeNull(\"country\");\n" +
-                "        }\n" +
-                "        if (object.getState() != null) {\n" +
-                "            out.write(\"state\", object.getState());\n" +
-                "        } else if (context.writeNullValues()) {\n" +
-                "            out.writeNull(\"state\");\n" +
-                "        }\n" +
-                "        if (object.getStreet() != null) {\n" +
-                "            out.write(\"street\", object.getStreet());\n" +
-                "        } else if (context.writeNullValues()) {\n" +
-                "            out.writeNull(\"street\");\n" +
-                "        }\n" +
-                "        if (object.getZip() != null) {\n" +
-                "            out.write(\"zip\", object.getZip());\n" +
-                "        } else if (context.writeNullValues()) {\n" +
-                "            out.writeNull(\"zip\");\n" +
-                "        }\n" +
-                "        out.writeEnd();\n" +
-                "    }\n" +
-                "\n" +
-                "}\n");
+                """
+                        package com.github.t1.jsonbap.impl;
+
+                        import javax.annotation.processing.Generated;
+
+                        import com.github.t1.jsonbap.api.JsonbWriter;
+
+                        import jakarta.json.stream.JsonGenerator;
+
+                        @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
+                        public class Address$$JsonbWriter implements JsonbWriter<Address, JsonGeneratorContext> {
+                            @Override
+                            public void toJson(Address object, JsonGenerator out, JsonGeneratorContext context) {
+                                out.writeStartObject();
+                                if (object.getCity() != null) {
+                                    out.write("city", object.getCity());
+                                } else if (context.writeNullValues()) {
+                                    out.writeNull("city");
+                                }
+                                if (object.getCountry() != null) {
+                                    out.write("country", object.getCountry());
+                                } else if (context.writeNullValues()) {
+                                    out.writeNull("country");
+                                }
+                                if (object.getState() != null) {
+                                    out.write("state", object.getState());
+                                } else if (context.writeNullValues()) {
+                                    out.writeNull("state");
+                                }
+                                if (object.getStreet() != null) {
+                                    out.write("street", object.getStreet());
+                                } else if (context.writeNullValues()) {
+                                    out.writeNull("street");
+                                }
+                                if (object.getZip() != null) {
+                                    out.write("zip", object.getZip());
+                                } else if (context.writeNullValues()) {
+                                    out.writeNull("zip");
+                                }
+                                out.writeEnd();
+                            }
+
+                        }
+                        """);
     }
 }

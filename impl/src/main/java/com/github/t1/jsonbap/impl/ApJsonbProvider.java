@@ -10,6 +10,7 @@ import jakarta.json.bind.JsonbException;
 import jakarta.json.bind.spi.JsonbProvider;
 import jakarta.json.spi.JsonProvider;
 import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonGeneratorFactory;
 import lombok.RequiredArgsConstructor;
 
 import java.io.InputStream;
@@ -20,6 +21,7 @@ import java.io.Writer;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,14 +35,15 @@ public class ApJsonbProvider extends JsonbProvider {
     private static final Map<String, JsonbWriter<?, JsonGeneratorContext>> WRITERS = new ConcurrentHashMap<>();
 
     static {
+        WRITERS.put(List.class.getName(), new Iterable$$JsonbWriter());
         WRITERS.put(ArrayList.class.getName(), new Iterable$$JsonbWriter());
         WRITERS.put(String.class.getName(), new String$$JsonbWriter());
     }
 
-    public static <T> JsonbWriter<T, JsonGeneratorContext> jsonbWriterFor(Object object) {
-        @SuppressWarnings("unchecked") var jsonbWriter = (JsonbWriter<T, JsonGeneratorContext>)
-                WRITERS.computeIfAbsent(object.getClass().getName(), ApJsonbProvider::loadWriterFor);
-        return jsonbWriter;
+    @SuppressWarnings("unchecked")
+    public static <T> JsonbWriter<T, JsonGeneratorContext> jsonbWriterFor(Type type) {
+        return (JsonbWriter<T, JsonGeneratorContext>)
+                WRITERS.computeIfAbsent(type.getTypeName(), ApJsonbProvider::loadWriterFor);
     }
 
     private static JsonbWriter<?, JsonGeneratorContext> loadWriterFor(String className) {
@@ -112,41 +115,48 @@ public class ApJsonbProvider extends JsonbProvider {
         }
 
         @Override public String toJson(Object object) throws JsonbException {
+            return toJson(object, object.getClass());
+        }
+
+        @Override public String toJson(Object object, Type runtimeType) throws JsonbException {
             var writer = new StringWriter();
+            toJson(object, runtimeType, writer);
+            return writer.toString();
+        }
+
+        @Override public void toJson(Object object, Writer writer) throws JsonbException {
+            toJson(object, object.getClass(), writer);
+        }
+
+        @Override public void toJson(Object object, Type runtimeType, Writer writer) throws JsonbException {
+            var factory = createJsonGeneratorFactory();
+            try (var generator = factory.createGenerator(writer)) {
+                write(object, runtimeType, generator);
+            }
+        }
+
+        @Override public void toJson(Object object, OutputStream stream) throws JsonbException {
+            toJson(object, object.getClass(), stream);
+        }
+
+        @Override public void toJson(Object object, Type runtimeType, OutputStream stream) throws JsonbException {
+            var factory = createJsonGeneratorFactory();
+            try (var generator = factory.createGenerator(stream)) {
+                write(object, runtimeType, generator);
+            }
+        }
+
+        private JsonGeneratorFactory createJsonGeneratorFactory() {
             var jsonpConfig = new HashMap<String, Object>();
             if (booleanConfig(FORMATTING)) {
                 jsonpConfig.put(PRETTY_PRINTING, true); // value is insignificant, i.e. FALSE is also pretty
             }
-            var factory = jsonpProvider.createGeneratorFactory(jsonpConfig);
-            try (var generator = factory.createGenerator(writer)) {
-                write(object, generator);
-            }
-            return writer.toString();
+            return jsonpProvider.createGeneratorFactory(jsonpConfig);
         }
 
-        @Override public String toJson(Object object, Type runtimeType) throws JsonbException {
-            throw new UnsupportedOperationException("not yet implemented"); // TODO implement
-        }
-
-        @Override public void toJson(Object object, Writer writer) throws JsonbException {
-            throw new UnsupportedOperationException("not yet implemented"); // TODO implement
-        }
-
-        @Override public void toJson(Object object, Type runtimeType, Writer writer) throws JsonbException {
-            throw new UnsupportedOperationException("not yet implemented"); // TODO implement
-        }
-
-        @Override public void toJson(Object object, OutputStream stream) throws JsonbException {
-            throw new UnsupportedOperationException("not yet implemented"); // TODO implement
-        }
-
-        @Override public void toJson(Object object, Type runtimeType, OutputStream stream) throws JsonbException {
-            throw new UnsupportedOperationException("not yet implemented"); // TODO implement
-        }
-
-        private <T> void write(T object, JsonGenerator out) {
+        private <T> void write(T object, Type type, JsonGenerator out) {
             var context = new JsonGeneratorContext(booleanConfig(NULL_VALUES));
-            jsonbWriterFor(object).toJson(object, out, context);
+            jsonbWriterFor(type).toJson(object, out, context);
         }
 
         @Override public void close() {
