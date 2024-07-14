@@ -24,27 +24,30 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static jakarta.json.bind.JsonbConfig.FORMATTING;
+import static jakarta.json.bind.JsonbConfig.NULL_VALUES;
 import static jakarta.json.stream.JsonGenerator.PRETTY_PRINTING;
+import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
 public class ApJsonbProvider extends JsonbProvider {
-    private static final Map<String, JsonbWriter<?>> WRITERS = new ConcurrentHashMap<>();
+    private static final Map<String, JsonbWriter<?, JsonGeneratorContext>> WRITERS = new ConcurrentHashMap<>();
 
     static {
         WRITERS.put(ArrayList.class.getName(), new Iterable$$JsonbWriter());
         WRITERS.put(String.class.getName(), new String$$JsonbWriter());
     }
 
-    public static <T> JsonbWriter<T> jsonbWriterFor(Object object) {
-        @SuppressWarnings("unchecked") JsonbWriter<T> jsonbWriter = (JsonbWriter<T>)
+    public static <T> JsonbWriter<T, JsonGeneratorContext> jsonbWriterFor(Object object) {
+        @SuppressWarnings("unchecked") var jsonbWriter = (JsonbWriter<T, JsonGeneratorContext>)
                 WRITERS.computeIfAbsent(object.getClass().getName(), ApJsonbProvider::loadWriterFor);
         return jsonbWriter;
     }
 
-    private static JsonbWriter<?> loadWriterFor(String className) {
+    private static JsonbWriter<?, JsonGeneratorContext> loadWriterFor(String className) {
         try {
             Class<?> jsonbWriterClass = Class.forName(className + "$$JsonbWriter");
-            return (JsonbWriter<?>) jsonbWriterClass.getConstructor().newInstance();
+            //noinspection unchecked
+            return (JsonbWriter<?, JsonGeneratorContext>) jsonbWriterClass.getConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("can't create instance of jsonb writer for " + className, e);
         }
@@ -80,6 +83,10 @@ public class ApJsonbProvider extends JsonbProvider {
         private final JsonbConfig config;
         private final JsonProvider jsonpProvider;
 
+        private boolean booleanConfig(String name) {
+            return config.getProperty(name).orElse(FALSE) == TRUE;
+        }
+
         @Override public <T> T fromJson(String str, Class<T> type) throws JsonbException {
             throw new UnsupportedOperationException("not yet implemented"); // TODO implement
         }
@@ -107,8 +114,8 @@ public class ApJsonbProvider extends JsonbProvider {
         @Override public String toJson(Object object) throws JsonbException {
             var writer = new StringWriter();
             var jsonpConfig = new HashMap<String, Object>();
-            if (config.getProperty(FORMATTING).isPresent() && config.getProperty(FORMATTING).get() == TRUE) {
-                jsonpConfig.put(PRETTY_PRINTING, true);
+            if (booleanConfig(FORMATTING)) {
+                jsonpConfig.put(PRETTY_PRINTING, true); // value is insignificant, i.e. FALSE is also pretty
             }
             var factory = jsonpProvider.createGeneratorFactory(jsonpConfig);
             try (var generator = factory.createGenerator(writer)) {
@@ -137,8 +144,9 @@ public class ApJsonbProvider extends JsonbProvider {
             throw new UnsupportedOperationException("not yet implemented"); // TODO implement
         }
 
-        private static <T> void write(T object, JsonGenerator out) {
-            jsonbWriterFor(object).toJson(object, out);
+        private <T> void write(T object, JsonGenerator out) {
+            var context = new JsonGeneratorContext(booleanConfig(NULL_VALUES));
+            jsonbWriterFor(object).toJson(object, out, context);
         }
 
         @Override public void close() {

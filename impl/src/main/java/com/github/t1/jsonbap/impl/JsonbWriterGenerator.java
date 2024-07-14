@@ -31,12 +31,15 @@ class JsonbWriterGenerator {
         typeGenerator.addImport(type(ApJsonbProvider.class));
         typeGenerator.annotation(type(Generated.class))
             .set("value", JsonbAnnotationProcessor.class.getName());
-        typeGenerator.addImplements(new TypeExpressionGenerator(typeGenerator, type(JsonbWriter.class)).withTypeArg(type));
+        typeGenerator.addImplements(new TypeExpressionGenerator(typeGenerator, type(JsonbWriter.class))
+                .withTypeArg(type)
+                .withTypeArg(type(JsonGeneratorContext.class)));
 
         var toJson = typeGenerator.addMethod("toJson");
         toJson.annotation(type(Override.class));
         toJson.addParameter("object").type(new TypeExpressionGenerator(typeGenerator, type));
         toJson.addParameter("out").type(new TypeExpressionGenerator(typeGenerator, type(JsonGenerator.class)));
+        toJson.addParameter("context").type(new TypeExpressionGenerator(typeGenerator, type(JsonGeneratorContext.class)));
         toJson.body(body());
     }
 

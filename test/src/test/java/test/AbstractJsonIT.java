@@ -21,14 +21,18 @@ abstract class AbstractJsonIT {
     private static final int N = 5;
     protected static final List<Person> DATA = IntStream.range(0, N).mapToObj(AbstractJsonIT::person)
             .collect(toList());
-    private static final String JSON = IntStream.range(0, N).mapToObj(AbstractJsonIT::json)
-            .collect(joining(",", "[", "]"));
-    protected static final String PRETTY_JSON = prettyPrint(JSON);
 
-    static String json(int i) {
+    protected static String repeatedJson(boolean nullValues) {
+        return IntStream.range(0, N).mapToObj(i -> json(i, nullValues))
+                .collect(joining(",", "[", "]"));
+    }
+
+    static String json(int i, boolean nullValues) {
         return
                 "{\"address\":{" +
                         /**/"\"city\":\"Somewhere-" + i + "\"," +
+                        /**/(nullValues ? "\"country\":null," : "") +
+                        /**/(nullValues ? "\"state\":null," : "") +
                         /**/"\"street\":\"" + (12000 + i) + " Main Street\"," +
                         /**/"\"zip\":" + (50000 + i) +
                 "}," +
@@ -56,7 +60,7 @@ abstract class AbstractJsonIT {
     void shouldSerialize() {
         var json = toJson(DATA);
 
-        then(json).isEqualTo(JSON);
+        then(json).isEqualTo(repeatedJson(false));
     }
 
     abstract String toJson(@SuppressWarnings("SameParameterValue") Object object);
