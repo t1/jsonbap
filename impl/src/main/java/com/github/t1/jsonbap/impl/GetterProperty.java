@@ -85,9 +85,8 @@ abstract class GetterProperty implements Property {
         @Override public void write(StringBuilder out) {
             out
                     .append("        if (").append(valueExpression).append(" != null) {\n")
-                    .append("            out.writeKey(\"").append(name()).append("\");\n")
-                    .append("            ApJsonbProvider.jsonbWriterFor(").append(valueExpression)
-                    .append(".getClass()).toJson(").append(valueExpression).append(", out, context);\n")
+                    .append("            context.serialize(\"").append(name()).append("\", ")
+                    /**/.append(valueExpression).append(", out);\n")
                     .append("        }\n");
         }
     }
@@ -101,9 +100,8 @@ abstract class GetterProperty implements Property {
         @Override public void write(StringBuilder out) {
             out
                     .append("        if (").append(valueExpression).append(" != null) {\n")
-                    .append("            out.writeKey(\"").append(name()).append("\");\n")
-                    /**/.append("            ApJsonbProvider.jsonbWriterFor(").append(valueExpression)
-                    /**/.append(".getClass()).toJson(").append(valueExpression).append(", out, context);\n")
+                    .append("            context.serialize(\"").append(name()).append("\", ")
+                    /**/.append(valueExpression).append(", out);\n")
                     .append("        }\n");
         }
     }

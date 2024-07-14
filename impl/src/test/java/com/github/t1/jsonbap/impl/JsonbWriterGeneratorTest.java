@@ -66,8 +66,7 @@ class JsonbWriterGeneratorTest {
                             public void toJson(Person object, JsonGenerator out, JsonGeneratorContext context) {
                                 out.writeStartObject();
                                 if (object.getAddress() != null) {
-                                    out.writeKey("address");
-                                    ApJsonbProvider.jsonbWriterFor(object.getAddress().getClass()).toJson(object.getAddress(), out, context);
+                                    context.serialize("address", object.getAddress(), out);
                                 }
                                 out.write("age", object.getAge());
                                 if (object.getFirstName() != null) {
@@ -81,8 +80,7 @@ class JsonbWriterGeneratorTest {
                                     out.writeNull("lastName");
                                 }
                                 if (object.getRoles() != null) {
-                                    out.writeKey("roles");
-                                    ApJsonbProvider.jsonbWriterFor(object.getRoles().getClass()).toJson(object.getRoles(), out, context);
+                                    context.serialize("roles", object.getRoles(), out);
                                 }
                                 out.writeEnd();
                             }

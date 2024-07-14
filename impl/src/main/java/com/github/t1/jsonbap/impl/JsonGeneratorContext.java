@@ -1,10 +1,15 @@
 package com.github.t1.jsonbap.impl;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
+import jakarta.json.bind.serializer.SerializationContext;
+import jakarta.json.stream.JsonGenerator;
 
-@RequiredArgsConstructor @Getter @Accessors(fluent = true)
-public class JsonGeneratorContext {
-    private final boolean writeNullValues;
+public record JsonGeneratorContext(boolean writeNullValues) implements SerializationContext {
+    @Override public <T> void serialize(String key, T object, JsonGenerator generator) {
+        generator.writeKey(key);
+        ApJsonbProvider.jsonbWriterFor(object.getClass()).toJson(object, generator, this);
+    }
+
+    @Override public <T> void serialize(T object, JsonGenerator generator) {
+        ApJsonbProvider.jsonbWriterFor(object.getClass()).toJson(object, generator, this);
+    }
 }
