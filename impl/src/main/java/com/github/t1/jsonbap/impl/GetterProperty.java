@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 abstract class GetterProperty implements Property {
     static boolean isGetter(Method method) {
         return method.isPublic()
-               && method.getName().startsWith("get")
+               && method.getName().startsWith("get") // TODO booleans may start with `is`
                && !"java.lang.Object".equals(method.getDeclaringType().getFullName());
     }
 
@@ -40,8 +40,7 @@ abstract class GetterProperty implements Property {
         public IntGetterProperty(String valueExpression, String name) {super(valueExpression, name);}
 
         @Override public void write(StringBuilder out) {
-            out.append("        out.append(delim).append(\"\\\"").append(name())
-                .append("\\\":\").append(Integer.toString(").append(valueExpression).append("));\n");
+            out.append("        out.write(\"").append(name()).append("\", ").append(valueExpression).append(");\n");
         }
     }
 
@@ -49,12 +48,10 @@ abstract class GetterProperty implements Property {
         public IntegerGetterProperty(String name, String valueExpression) {super(name, valueExpression);}
 
         @Override public void write(StringBuilder out) {
-            out.append("        if (").append(valueExpression).append(" != null) {\n")
-                .append("            out.append(delim).append(\"\\\"").append(name())
-                /**/.append("\\\":\").append(").append(valueExpression)
-                /**/.append(".toString());\n")
-                .append("            delim = ',';\n")
-                .append("        }\n");
+            out
+                    .append("        if (").append(valueExpression).append(" != null) {\n")
+                    .append("            out.write(\"").append(name()).append("\", ").append(valueExpression).append(");\n")
+                    .append("        }\n");
         }
     }
 
@@ -63,12 +60,10 @@ abstract class GetterProperty implements Property {
 
         @Override public void write(StringBuilder out) {
             // TODO use String$$JsonbWriter
-            out.append("        if (").append(valueExpression).append(" != null) {\n")
-                .append("            out.append(delim).append(\"\\\"").append(name())
-                /**/.append("\\\":\\\"\").append(").append(valueExpression)
-                /**/.append(").append('\"');\n")
-                .append("            delim = ',';\n")
-                .append("        }\n");
+            out
+                    .append("        if (").append(valueExpression).append(" != null) {\n")
+                    .append("            out.write(\"").append(name()).append("\", ").append(valueExpression).append(");\n")
+                    .append("        }\n");
         }
     }
 
@@ -76,21 +71,12 @@ abstract class GetterProperty implements Property {
         public CollectionGetterProperty(String name, String valueExpression) {super(name, valueExpression);}
 
         @Override public void write(StringBuilder out) {
-            out.append("        if (").append(valueExpression).append(" != null) {\n")
-                .append("            out.append(delim).append(\"\\\"").append(name()).append(
-                    "\\\":[\");\n" +
-                    "            var first = true;\n" +
-                    "            for (Object item : ").append(valueExpression).append(
-                    ") {\n" +
-                    "                if (item != null) {\n" +
-                    "                    if (!first) out.append(',');\n" +
-                    "                    ApJsonbProvider.jsonbWriterFor(item).toJson(item, out);\n" +
-                    "                    first = false;\n" +
-                    "                }\n" +
-                    "            }\n" +
-                    "            out.append(\"]\");\n" +
-                    "            delim = ',';\n" +
-                    "        }\n");
+            out
+                    .append("        if (").append(valueExpression).append(" != null) {\n")
+                    .append("            out.writeKey(\"").append(name()).append("\");\n")
+                    .append("            ApJsonbProvider.jsonbWriterFor(").append(valueExpression)
+                    .append(").toJson(").append(valueExpression).append(", out);\n")
+                    .append("        }\n");
         }
     }
 
@@ -98,12 +84,12 @@ abstract class GetterProperty implements Property {
         public ObjectGetterProperty(String name, String valueExpression) {super(name, valueExpression);}
 
         @Override public void write(StringBuilder out) {
-            out.append("        if (").append(valueExpression).append(" != null) {\n")
-                .append("            out.append(delim).append(\"\\\"").append(name()).append("\\\":\");\n")
-                /**/.append("            ApJsonbProvider.jsonbWriterFor(").append(valueExpression)
-                /**/.append(").toJson(").append(valueExpression).append(", out);\n")
-                .append("            delim = ',';\n")
-                .append("        }\n");
+            out
+                    .append("        if (").append(valueExpression).append(" != null) {\n")
+                    .append("            out.writeKey(\"").append(name()).append("\");\n")
+                    /**/.append("            ApJsonbProvider.jsonbWriterFor(").append(valueExpression)
+                    /**/.append(").toJson(").append(valueExpression).append(", out);\n")
+                    .append("        }\n");
         }
     }
 }

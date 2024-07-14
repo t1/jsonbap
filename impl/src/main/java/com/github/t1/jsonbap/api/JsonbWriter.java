@@ -1,8 +1,7 @@
 package com.github.t1.jsonbap.api;
 
-import java.io.IOException;
-import java.io.Writer;
+import jakarta.json.stream.JsonGenerator;
 
 public interface JsonbWriter<T> {
-    void toJson(T object, Writer writer) throws IOException;
+    void toJson(T object, JsonGenerator out);
 }

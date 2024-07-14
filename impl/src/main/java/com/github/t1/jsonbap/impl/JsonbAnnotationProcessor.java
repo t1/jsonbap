@@ -3,7 +3,6 @@ package com.github.t1.jsonbap.impl;
 import com.github.t1.exap.ExtendedAbstractProcessor;
 import com.github.t1.exap.Round;
 import com.github.t1.exap.SupportedAnnotationClasses;
-import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.reflection.Type;
 import com.github.t1.jsonbap.api.Jsonb;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +23,7 @@ public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
     private void process(Type type) {
         var generator = new JsonbWriterGenerator(type);
         System.out.println("generate " + generator.className());
-        try (TypeGenerator typeGenerator = type.getPackage().openTypeGenerator(generator.className())) {
+        try (var typeGenerator = type.getPackage().openTypeGenerator(generator.className())) {
             generator.generate(typeGenerator);
         }
     }

@@ -5,10 +5,9 @@ import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.reflection.ReflectionProcessingEnvironment;
 import com.github.t1.exap.reflection.Type;
 import com.github.t1.jsonbap.api.JsonbWriter;
+import jakarta.json.stream.JsonGenerator;
 
 import javax.annotation.processing.Generated;
-import java.io.IOException;
-import java.io.Writer;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -37,18 +36,17 @@ class JsonbWriterGenerator {
         var toJson = typeGenerator.addMethod("toJson");
         toJson.annotation(type(Override.class));
         toJson.addParameter("object").type(new TypeExpressionGenerator(typeGenerator, type));
-        toJson.addParameter("out").type(new TypeExpressionGenerator(typeGenerator, type(Writer.class)));
-        toJson.addThrows(type(IOException.class));
+        toJson.addParameter("out").type(new TypeExpressionGenerator(typeGenerator, type(JsonGenerator.class)));
         toJson.body(body());
     }
 
     private String body() {
         var body = new StringBuilder();
-        body.append("char delim = '{';\n");
-        for (Property property : properties()) {
+        body.append("out.writeStartObject();\n");
+        for (var property : properties()) {
             property.write(body);
         }
-        body.append("        out.append(\"}\");");
+        body.append("        out.writeEnd();");
         return body.toString();
     }
 
