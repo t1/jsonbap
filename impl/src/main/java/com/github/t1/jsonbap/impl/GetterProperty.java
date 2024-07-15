@@ -69,7 +69,7 @@ abstract class GetterProperty implements Property {
                 out
                         .append("        if (").append(valueExpression).append(" != null) {\n")
                         .append("            ").append(getterExpression)
-                        .append("        } else if (context.writeNullValues()) {\n")
+                        .append("        } else if (((JsonGeneratorContext) context).writeNullValues()) {\n")
                         .append("            out.writeNull(\"").append(name()).append("\");\n")
                         .append("        }\n");
             }

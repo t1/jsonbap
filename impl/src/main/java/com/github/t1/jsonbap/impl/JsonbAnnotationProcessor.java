@@ -21,7 +21,7 @@ public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
     }
 
     private void process(Type type) {
-        var generator = new JsonbWriterGenerator(type);
+        var generator = new JsonbSerializerGenerator(type);
         System.out.println("generate " + generator.className());
         try (var typeGenerator = type.getPackage().openTypeGenerator(generator.className())) {
             generator.generate(typeGenerator);

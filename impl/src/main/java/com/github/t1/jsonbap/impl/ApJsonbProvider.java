@@ -1,12 +1,12 @@
 package com.github.t1.jsonbap.impl;
 
-import com.github.t1.jsonbap.api.JsonbWriter;
-import com.github.t1.jsonbap.impl.writers.Iterable$$JsonbWriter;
-import com.github.t1.jsonbap.impl.writers.String$$JsonbWriter;
+import com.github.t1.jsonbap.impl.writers.Iterable$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.String$$JsonbSerializer;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
 import jakarta.json.bind.JsonbException;
+import jakarta.json.bind.serializer.JsonbSerializer;
 import jakarta.json.bind.spi.JsonbProvider;
 import jakarta.json.spi.JsonProvider;
 import jakarta.json.stream.JsonGenerator;
@@ -32,25 +32,24 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
 public class ApJsonbProvider extends JsonbProvider {
-    private static final Map<String, JsonbWriter<?, JsonGeneratorContext>> WRITERS = new ConcurrentHashMap<>();
+    private static final Map<String, JsonbSerializer<?>> SERIALIZERS = new ConcurrentHashMap<>();
 
     static {
-        WRITERS.put(List.class.getName(), new Iterable$$JsonbWriter());
-        WRITERS.put(ArrayList.class.getName(), new Iterable$$JsonbWriter());
-        WRITERS.put(String.class.getName(), new String$$JsonbWriter());
+        SERIALIZERS.put(List.class.getName(), new Iterable$$JsonbSerializer());
+        SERIALIZERS.put(ArrayList.class.getName(), new Iterable$$JsonbSerializer());
+        SERIALIZERS.put(String.class.getName(), new String$$JsonbSerializer());
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> JsonbWriter<T, JsonGeneratorContext> jsonbWriterFor(Type type) {
-        return (JsonbWriter<T, JsonGeneratorContext>)
-                WRITERS.computeIfAbsent(type.getTypeName(), ApJsonbProvider::loadWriterFor);
+    public static <T> JsonbSerializer<T> serializerFor(Type type) {
+        return (JsonbSerializer<T>)
+                SERIALIZERS.computeIfAbsent(type.getTypeName(), ApJsonbProvider::loadWriterFor);
     }
 
-    private static JsonbWriter<?, JsonGeneratorContext> loadWriterFor(String className) {
+    private static JsonbSerializer<?> loadWriterFor(String className) {
         try {
-            Class<?> jsonbWriterClass = Class.forName(className + "$$JsonbWriter");
-            //noinspection unchecked
-            return (JsonbWriter<?, JsonGeneratorContext>) jsonbWriterClass.getConstructor().newInstance();
+            Class<?> serializerClass = Class.forName(className + "$$JsonbSerializer");
+            return (JsonbSerializer<?>) serializerClass.getConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("can't create instance of jsonb writer for " + className, e);
         }
@@ -156,7 +155,7 @@ public class ApJsonbProvider extends JsonbProvider {
 
         private <T> void write(T object, Type type, JsonGenerator out) {
             var context = new JsonGeneratorContext(booleanConfig(NULL_VALUES));
-            jsonbWriterFor(type).toJson(object, out, context);
+            serializerFor(type).serialize(object, out, context);
         }
 
         @Override public void close() {
