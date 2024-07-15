@@ -38,6 +38,7 @@ abstract class AbstractJsonIT {
                 "}," +
                 "\"age\":" + (12 + i) + "," +
                 "\"firstName\":\"Jane-" + i + "\"," +
+                (nullValues ? "\"formerAddress\":null," : "") +
                 "\"lastName\":\"Doe-" + i + "\"," +
                 "\"roles\":[\"role-1\",\"role-...\",\"role-" + i + "\"]}";
     }

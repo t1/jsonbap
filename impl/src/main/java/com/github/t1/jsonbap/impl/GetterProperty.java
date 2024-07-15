@@ -87,6 +87,8 @@ abstract class GetterProperty implements Property {
                     .append("        if (").append(valueExpression).append(" != null) {\n")
                     .append("            context.serialize(\"").append(name()).append("\", ")
                     /**/.append(valueExpression).append(", out);\n")
+                    .append("        } else if (((JsonGeneratorContext) context).writeNullValues()) {\n")
+                    .append("            out.writeNull(\"").append(name()).append("\");\n")
                     .append("        }\n");
         }
     }
@@ -102,6 +104,8 @@ abstract class GetterProperty implements Property {
                     .append("        if (").append(valueExpression).append(" != null) {\n")
                     .append("            context.serialize(\"").append(name()).append("\", ")
                     /**/.append(valueExpression).append(", out);\n")
+                    .append("        } else if (((JsonGeneratorContext) context).writeNullValues()) {\n")
+                    .append("            out.writeNull(\"").append(name()).append("\");\n")
                     .append("        }\n");
         }
     }

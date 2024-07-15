@@ -67,6 +67,8 @@ class JsonbSerializerGeneratorTest {
                                 out.writeStartObject();
                                 if (object.getAddress() != null) {
                                     context.serialize("address", object.getAddress(), out);
+                                } else if (((JsonGeneratorContext) context).writeNullValues()) {
+                                    out.writeNull("address");
                                 }
                                 out.write("age", object.getAge());
                                 if (object.getFirstName() != null) {
@@ -81,6 +83,8 @@ class JsonbSerializerGeneratorTest {
                                 }
                                 if (object.getRoles() != null) {
                                     context.serialize("roles", object.getRoles(), out);
+                                } else if (((JsonGeneratorContext) context).writeNullValues()) {
+                                    out.writeNull("roles");
                                 }
                                 out.writeEnd();
                             }

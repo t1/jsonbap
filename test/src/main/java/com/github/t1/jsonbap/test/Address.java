@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @JsonPropertyOrder(alphabetic = true)
 @JsonInclude(Include.NON_NULL)
 @Data @Builder @AllArgsConstructor @NoArgsConstructor
+@SuppressWarnings("LombokGetterMayBeUsed") // lombok may run after jsonbap
 public class Address {
     String street;
     Integer zip;
