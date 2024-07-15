@@ -1,5 +1,6 @@
 package test;
 
+import jakarta.json.Json;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
@@ -8,6 +9,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -44,7 +47,7 @@ abstract class JsonbIT extends AbstractJsonIT {
 
     @Test void shouldSerializeWithType() throws Exception {
         String json;
-        try(var jsonb = jsonb(new TestConfig(false, false))) {
+        try (var jsonb = jsonb(new TestConfig(false, false))) {
 
             json = jsonb.toJson(DATA, List.class);
         }
@@ -54,7 +57,7 @@ abstract class JsonbIT extends AbstractJsonIT {
 
     @Test void shouldSerializeToWriter() throws Exception {
         var writer = new StringWriter();
-        try(var jsonb = jsonb(new TestConfig(false, false))) {
+        try (var jsonb = jsonb(new TestConfig(false, false))) {
 
             jsonb.toJson(DATA, writer);
         }
@@ -64,7 +67,7 @@ abstract class JsonbIT extends AbstractJsonIT {
 
     @Test void shouldSerializeToWriterWithType() throws Exception {
         var writer = new StringWriter();
-        try(var jsonb = jsonb(new TestConfig(false, false))) {
+        try (var jsonb = jsonb(new TestConfig(false, false))) {
 
             jsonb.toJson(DATA, List.class, writer);
         }
@@ -74,7 +77,7 @@ abstract class JsonbIT extends AbstractJsonIT {
 
     @Test void shouldSerializeToOutputStream() throws Exception {
         var outputStream = new ByteArrayOutputStream();
-        try(var jsonb = jsonb(new TestConfig(false, false))) {
+        try (var jsonb = jsonb(new TestConfig(false, false))) {
 
             jsonb.toJson(DATA, outputStream);
         }
@@ -84,12 +87,96 @@ abstract class JsonbIT extends AbstractJsonIT {
 
     @Test void shouldSerializeToOutputStreamWithType() throws Exception {
         var outputStream = new ByteArrayOutputStream();
-        try(var jsonb = jsonb(new TestConfig(false, false))) {
+        try (var jsonb = jsonb(new TestConfig(false, false))) {
 
             jsonb.toJson(DATA, List.class, outputStream);
         }
 
         then(outputStream.toString()).isEqualTo(repeatedJson(false));
+    }
+
+    @Test void shouldSerializeNull() throws Exception {
+        try (var jsonb = jsonb(new TestConfig(true, true))) {
+
+            var json = jsonb.toJson(null);
+
+            then(json).isEqualTo("null");
+        }
+    }
+
+    @Test void shouldSerializeJsonValues() throws Exception {
+        try (var jsonb = jsonb(new TestConfig(true, true))) {
+
+            var json = jsonb.toJson(Json.createObjectBuilder()
+                    .add("string", Json.createValue("foo"))
+                    .add("int", Json.createValue(123))
+                    .add("long", Json.createValue(123456789012345L))
+                    .add("double", Json.createValue(12345.6789d))
+                    .add("bigDecimal", Json.createValue(BigDecimal.valueOf(123.456d)))
+                    .add("bigInteger", Json.createValue(BigInteger.TEN))
+                    .add("array", Json.createArrayBuilder(List.of(1, 2, 3)))
+                    .build());
+
+            then(json).isEqualTo("""
+                    {
+                        "string": "foo",
+                        "int": 123,
+                        "long": 123456789012345,
+                        "double": 12345.6789,
+                        "bigDecimal": 123.456,
+                        "bigInteger": 10,
+                        "array": [
+                            1,
+                            2,
+                            3
+                        ]
+                    }""");
+        }
+    }
+
+    @Test void shouldSerializeBigInteger() throws Exception {
+        try (var jsonb = jsonb(new TestConfig(true, true))) {
+
+            var json = jsonb.toJson(BigInteger.valueOf(123456));
+
+            then(json).isEqualTo("123456");
+        }
+    }
+
+    @Test void shouldSerializeBigDecimal() throws Exception {
+        try (var jsonb = jsonb(new TestConfig(true, true))) {
+
+            var json = jsonb.toJson(BigDecimal.valueOf(123.456d));
+
+            then(json).isEqualTo("123.456");
+        }
+    }
+
+    @Test void shouldSerializeLong() throws Exception {
+        try (var jsonb = jsonb(new TestConfig(true, true))) {
+
+            var json = jsonb.toJson(123456L);
+
+            then(json).isEqualTo("123456");
+        }
+    }
+
+    @Test void shouldSerializeDouble() throws Exception {
+        try (var jsonb = jsonb(new TestConfig(true, true))) {
+
+            var json = jsonb.toJson(123.456d);
+
+            then(json).isEqualTo("123.456");
+        }
+    }
+
+    @Test void shouldSerializeBoolean() throws Exception {
+        try (var jsonb = jsonb(new TestConfig(true, true))) {
+
+            var json = jsonb.toJson(true);
+
+            then(json).isEqualTo("true");
+        }
     }
 
     private String toJson(Object object, TestConfig testConfig) {

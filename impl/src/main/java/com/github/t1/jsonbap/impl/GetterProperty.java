@@ -33,7 +33,7 @@ class GetterProperty implements Property {
     protected final String valueExpression;
 
     @Override public void write(StringBuilder out) {
-        if (isPrimitive()) {
+        if (PRIMITIVE_TYPES.contains(typeName)) {
             out.append("        out.write(\"").append(name()).append("\", ")
                     .append(valueExpression).append(");\n");
         } else {
@@ -42,8 +42,13 @@ class GetterProperty implements Property {
         }
     }
 
-    /** The primitive types that JsonGenerator supports directly */
-    private boolean isPrimitive() {
-        return Set.of("int", "long", "double", "boolean").contains(typeName);
-    }
+    /**
+     * The primitive types that JsonGenerator supports directly; no null-check required.
+     * All other types are serialized via the context, which does the null-check.
+     */
+    private static final Set<String> PRIMITIVE_TYPES = Set.of(
+            "int",
+            "long",
+            "double",
+            "boolean");
 }

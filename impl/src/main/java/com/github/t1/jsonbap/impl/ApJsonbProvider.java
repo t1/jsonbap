@@ -1,8 +1,16 @@
 package com.github.t1.jsonbap.impl;
 
+import com.github.t1.jsonbap.impl.writers.BigDecimal$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.BigInteger$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.Boolean$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.Double$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.Integer$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.Iterable$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.JsonValue$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.Long$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.Null$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.String$$JsonbSerializer;
+import jakarta.json.JsonValue;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
@@ -20,6 +28,8 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,38 +43,45 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
 public class ApJsonbProvider extends JsonbProvider {
-    private static final Map<String, JsonbSerializer<?>> SERIALIZERS = new ConcurrentHashMap<>();
+    private static final Map<Type, JsonbSerializer<?>> SERIALIZERS = new ConcurrentHashMap<>();
 
     static {
-        SERIALIZERS.put(List.class.getName(), new Iterable$$JsonbSerializer());
-        SERIALIZERS.put(ArrayList.class.getName(), new Iterable$$JsonbSerializer());
+        SERIALIZERS.put(List.class, new Iterable$$JsonbSerializer());
+        SERIALIZERS.put(ArrayList.class, new Iterable$$JsonbSerializer());
         // ---------- Types directly supported by JsonGenerator:
-        // TODO JsonValue
-        SERIALIZERS.put(String.class.getName(), new String$$JsonbSerializer());
-        // TODO BigInteger
-        // TODO BigDecimal
-        SERIALIZERS.put(Integer.class.getName(), new Integer$$JsonbSerializer());
-        // TODO Long
-        // TODO Double
-        // TODO Boolean
+        SERIALIZERS.put(JsonValue.class, new JsonValue$$JsonbSerializer());
+        SERIALIZERS.put(String.class, new String$$JsonbSerializer());
+        SERIALIZERS.put(BigInteger.class, new BigInteger$$JsonbSerializer());
+        SERIALIZERS.put(BigDecimal.class, new BigDecimal$$JsonbSerializer());
+        SERIALIZERS.put(Integer.class, new Integer$$JsonbSerializer());
+        SERIALIZERS.put(Long.class, new Long$$JsonbSerializer());
+        SERIALIZERS.put(Double.class, new Double$$JsonbSerializer());
+        SERIALIZERS.put(Boolean.class, new Boolean$$JsonbSerializer());
     }
 
     public static <T> JsonbSerializer<T> serializerFor(Object object) {
-        return serializerFor(object.getClass());
+        return serializerFor(typeOf(object));
     }
 
     @SuppressWarnings("unchecked")
     public static <T> JsonbSerializer<T> serializerFor(Type type) {
-        return (JsonbSerializer<T>)
-                SERIALIZERS.computeIfAbsent(type.getTypeName(), ApJsonbProvider::loadWriterFor);
+        return (JsonbSerializer<T>) ((type == null) ? Null$$JsonbSerializer.INSTANCE :
+                SERIALIZERS.computeIfAbsent(type, ApJsonbProvider::loadWriterFor));
     }
 
-    private static JsonbSerializer<?> loadWriterFor(String className) {
+    private static Type typeOf(Object object) {
+        return (object == null) ? null : object.getClass();
+    }
+
+    private static JsonbSerializer<?> loadWriterFor(Type type) {
+        if (type instanceof Class<?> c && JsonValue.class.isAssignableFrom(c)) {
+            return new JsonValue$$JsonbSerializer();
+        }
         try {
-            Class<?> serializerClass = Class.forName(className + "$$JsonbSerializer");
+            Class<?> serializerClass = Class.forName(type.getTypeName() + "$$JsonbSerializer");
             return (JsonbSerializer<?>) serializerClass.getConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("can't create instance of jsonb writer for " + className, e);
+            throw new RuntimeException("can't create instance of jsonb writer for " + type, e);
         }
     }
 
@@ -127,7 +144,7 @@ public class ApJsonbProvider extends JsonbProvider {
         }
 
         @Override public String toJson(Object object) throws JsonbException {
-            return toJson(object, object.getClass());
+            return toJson(object, typeOf(object));
         }
 
         @Override public String toJson(Object object, Type runtimeType) throws JsonbException {
@@ -137,7 +154,7 @@ public class ApJsonbProvider extends JsonbProvider {
         }
 
         @Override public void toJson(Object object, Writer writer) throws JsonbException {
-            toJson(object, object.getClass(), writer);
+            toJson(object, typeOf(object), writer);
         }
 
         @Override public void toJson(Object object, Type runtimeType, Writer writer) throws JsonbException {
@@ -148,7 +165,7 @@ public class ApJsonbProvider extends JsonbProvider {
         }
 
         @Override public void toJson(Object object, OutputStream stream) throws JsonbException {
-            toJson(object, object.getClass(), stream);
+            toJson(object, typeOf(object), stream);
         }
 
         @Override public void toJson(Object object, Type runtimeType, OutputStream stream) throws JsonbException {
