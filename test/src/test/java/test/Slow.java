@@ -1,6 +1,7 @@
 package test;
 
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -11,5 +12,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target(TYPE)
 @Tag("slow")
+@EnabledIfSystemProperty(named = "slow", matches = "true")
 public @interface Slow {
 }
