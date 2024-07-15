@@ -8,9 +8,7 @@ public class Iterable$$JsonbSerializer implements JsonbSerializer<Iterable<?>> {
     @Override public void serialize(Iterable<?> obj, JsonGenerator generator, SerializationContext context) {
         generator.writeStartArray();
         for (Object item : obj) {
-            if (item != null) {
-                context.serialize(item, generator);
-            }
+            context.serialize(item, generator);
         }
         generator.writeEnd();
     }

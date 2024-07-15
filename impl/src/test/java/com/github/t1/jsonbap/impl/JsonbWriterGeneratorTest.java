@@ -65,27 +65,11 @@ class JsonbSerializerGeneratorTest {
                             @Override
                             public void serialize(Person object, JsonGenerator out, SerializationContext context) {
                                 out.writeStartObject();
-                                if (object.getAddress() != null) {
-                                    context.serialize("address", object.getAddress(), out);
-                                } else if (((JsonGeneratorContext) context).writeNullValues()) {
-                                    out.writeNull("address");
-                                }
-                                out.write("age", object.getAge());
-                                if (object.getFirstName() != null) {
-                                    out.write("firstName", object.getFirstName());
-                                } else if (((JsonGeneratorContext) context).writeNullValues()) {
-                                    out.writeNull("firstName");
-                                }
-                                if (object.getLastName() != null) {
-                                    out.write("lastName", object.getLastName());
-                                } else if (((JsonGeneratorContext) context).writeNullValues()) {
-                                    out.writeNull("lastName");
-                                }
-                                if (object.getRoles() != null) {
-                                    context.serialize("roles", object.getRoles(), out);
-                                } else if (((JsonGeneratorContext) context).writeNullValues()) {
-                                    out.writeNull("roles");
-                                }
+                                context.serialize("address", object.getAddress(), out);
+                                context.serialize("age", object.getAge(), out);
+                                context.serialize("firstName", object.getFirstName(), out);
+                                context.serialize("lastName", object.getLastName(), out);
+                                context.serialize("roles", object.getRoles(), out);
                                 out.writeEnd();
                             }
 
@@ -119,31 +103,11 @@ class JsonbSerializerGeneratorTest {
                             @Override
                             public void serialize(Address object, JsonGenerator out, SerializationContext context) {
                                 out.writeStartObject();
-                                if (object.getCity() != null) {
-                                    out.write("city", object.getCity());
-                                } else if (((JsonGeneratorContext) context).writeNullValues()) {
-                                    out.writeNull("city");
-                                }
-                                if (object.getCountry() != null) {
-                                    out.write("country", object.getCountry());
-                                } else if (((JsonGeneratorContext) context).writeNullValues()) {
-                                    out.writeNull("country");
-                                }
-                                if (object.getState() != null) {
-                                    out.write("state", object.getState());
-                                } else if (((JsonGeneratorContext) context).writeNullValues()) {
-                                    out.writeNull("state");
-                                }
-                                if (object.getStreet() != null) {
-                                    out.write("street", object.getStreet());
-                                } else if (((JsonGeneratorContext) context).writeNullValues()) {
-                                    out.writeNull("street");
-                                }
-                                if (object.getZip() != null) {
-                                    out.write("zip", object.getZip());
-                                } else if (((JsonGeneratorContext) context).writeNullValues()) {
-                                    out.writeNull("zip");
-                                }
+                                context.serialize("city", object.getCity(), out);
+                                context.serialize("country", object.getCountry(), out);
+                                context.serialize("state", object.getState(), out);
+                                context.serialize("street", object.getStreet(), out);
+                                context.serialize("zip", object.getZip(), out);
                                 out.writeEnd();
                             }
                         

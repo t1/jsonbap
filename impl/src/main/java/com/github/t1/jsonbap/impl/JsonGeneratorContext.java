@@ -5,11 +5,25 @@ import jakarta.json.stream.JsonGenerator;
 
 public record JsonGeneratorContext(boolean writeNullValues) implements SerializationContext {
     @Override public <T> void serialize(String key, T object, JsonGenerator generator) {
-        generator.writeKey(key);
-        ApJsonbProvider.serializerFor(object.getClass()).serialize(object, generator, this);
+        if (object == null) {
+            if (writeNullValues) {
+                generator.writeNull(key);
+            }
+        } else {
+            generator.writeKey(key);
+            var serializer = ApJsonbProvider.serializerFor(object);
+            serializer.serialize(object, generator, this);
+        }
     }
 
     @Override public <T> void serialize(T object, JsonGenerator generator) {
-        ApJsonbProvider.serializerFor(object.getClass()).serialize(object, generator, this);
+        if (object == null) {
+            if (writeNullValues) {
+                generator.writeNull();
+            }
+        } else {
+            var serializer = ApJsonbProvider.serializerFor(object);
+            serializer.serialize(object, generator, this);
+        }
     }
 }

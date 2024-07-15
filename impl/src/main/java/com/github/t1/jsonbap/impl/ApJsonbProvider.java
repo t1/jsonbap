@@ -1,5 +1,6 @@
 package com.github.t1.jsonbap.impl;
 
+import com.github.t1.jsonbap.impl.writers.Integer$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.Iterable$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.String$$JsonbSerializer;
 import jakarta.json.bind.Jsonb;
@@ -37,7 +38,19 @@ public class ApJsonbProvider extends JsonbProvider {
     static {
         SERIALIZERS.put(List.class.getName(), new Iterable$$JsonbSerializer());
         SERIALIZERS.put(ArrayList.class.getName(), new Iterable$$JsonbSerializer());
+        // ---------- Types directly supported by JsonGenerator:
+        // TODO JsonValue
         SERIALIZERS.put(String.class.getName(), new String$$JsonbSerializer());
+        // TODO BigInteger
+        // TODO BigDecimal
+        SERIALIZERS.put(Integer.class.getName(), new Integer$$JsonbSerializer());
+        // TODO long, Long
+        // TODO double, Double
+        // TODO boolean, Boolean
+    }
+
+    public static <T> JsonbSerializer<T> serializerFor(Object object) {
+        return serializerFor(object.getClass());
     }
 
     @SuppressWarnings("unchecked")
