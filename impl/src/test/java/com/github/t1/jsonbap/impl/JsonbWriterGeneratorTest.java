@@ -66,7 +66,7 @@ class JsonbSerializerGeneratorTest {
                             public void serialize(Person object, JsonGenerator out, SerializationContext context) {
                                 out.writeStartObject();
                                 context.serialize("address", object.getAddress(), out);
-                                context.serialize("age", object.getAge(), out);
+                                out.write("age", object.getAge());
                                 context.serialize("firstName", object.getFirstName(), out);
                                 context.serialize("lastName", object.getLastName(), out);
                                 context.serialize("roles", object.getRoles(), out);

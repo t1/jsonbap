@@ -44,9 +44,9 @@ public class ApJsonbProvider extends JsonbProvider {
         // TODO BigInteger
         // TODO BigDecimal
         SERIALIZERS.put(Integer.class.getName(), new Integer$$JsonbSerializer());
-        // TODO long, Long
-        // TODO double, Double
-        // TODO boolean, Boolean
+        // TODO Long
+        // TODO Double
+        // TODO Boolean
     }
 
     public static <T> JsonbSerializer<T> serializerFor(Object object) {

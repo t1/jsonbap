@@ -37,9 +37,12 @@ abstract class AbstractJsonIT {
                         /**/"\"zip\":" + (50000 + i) +
                 "}," +
                 "\"age\":" + (12 + i) + "," +
+                "\"averageScore\":" + (0.123d * i) + "," +
                 "\"firstName\":\"Jane-" + i + "\"," +
                 (nullValues ? "\"formerAddress\":null," : "") +
                 "\"lastName\":\"Doe-" + i + "\"," +
+                "\"member\":" + (i % 2 == 0) + "," +
+                "\"registrationTimestamp\":" + (i + 10000000000L) + "," +
                 "\"roles\":[\"role-1\",\"role-...\",\"role-" + i + "\"]}";
     }
 
@@ -48,11 +51,15 @@ abstract class AbstractJsonIT {
                 .firstName("Jane-" + i)
                 .lastName("Doe-" + i)
                 .age(12 + i)
+                .averageScore(0.123d * i)
                 .address(Address.builder()
                         .street((12000 + i) + " Main Street")
                         .zip(50000 + i)
                         .city("Somewhere-" + i)
                         .build())
+                .formerAddress(null)
+                .member(i % 2 == 0)
+                .registrationTimestamp(i + 10000000000L)
                 .roles(new ArrayList<>(List.of("role-1", "role-...", "role-" + i)))
                 .build();
     }

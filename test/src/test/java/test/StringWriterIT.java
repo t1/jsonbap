@@ -40,6 +40,7 @@ public class StringWriterIT extends AbstractJsonIT {
             delim = ',';
         }
         out.append(delim).append("\"age\":").append(Integer.toString(object.getAge()));
+        out.append(delim).append("\"averageScore\":").append(Double.toString(object.getAverageScore()));
         if (object.getFirstName() != null) {
             out.append(delim).append("\"firstName\":\"").append(object.getFirstName()).append('"');
             delim = ',';
@@ -48,6 +49,8 @@ public class StringWriterIT extends AbstractJsonIT {
             out.append(delim).append("\"lastName\":\"").append(object.getLastName()).append('"');
             delim = ',';
         }
+        out.append(delim).append("\"member\":").append(Boolean.toString(object.getMember()));
+        out.append(delim).append("\"registrationTimestamp\":").append(Long.toString(object.getRegistrationTimestamp()));
         if (object.getRoles() != null) {
             out.append(delim).append("\"roles\":[");
             var first = true;
