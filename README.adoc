@@ -5,6 +5,8 @@
 This project is in a very early stage and still far from ready for production use.
 ====
 
+`jsonbap` = JSON-B Annotation Processor
+
 An implementations of https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0[Jakarta JSON Binding] (JSON-B) using an annotation processor at compile-time instead of reflection at runtime, making it much faster, esp. when comparing to the utterly slow and bloated reference implementation of JSON-B, https://github.com/eclipse-ee4j/yasson[Yasson].
 
 Nice side effect: If you should need to debug your JSON-B mappings, you can simply set a breakpoint in your IDE and inspect the generated, nicely readable and simple Java code.

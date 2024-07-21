@@ -52,15 +52,19 @@ abstract class AbstractJsonIT {
                 .lastName("Doe-" + i)
                 .age(12 + i)
                 .averageScore(0.123d * i)
-                .address(Address.builder()
-                        .street((12000 + i) + " Main Street")
-                        .zip(50000 + i)
-                        .city("Somewhere-" + i)
-                        .build())
+                .address(address(i))
                 .formerAddress(null)
                 .member(i % 2 == 0)
                 .registrationTimestamp(i + 10000000000L)
                 .roles(new ArrayList<>(List.of("role-1", "role-...", "role-" + i)))
+                .build();
+    }
+
+    static Address address(int i) {
+        return Address.builder()
+                .street((12000 + i) + " Main Street")
+                .zip(50000 + i)
+                .city("Somewhere-" + i)
                 .build();
     }
 

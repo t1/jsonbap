@@ -103,7 +103,6 @@ public class ApJsonbProvider extends JsonbProvider {
         }
 
         @Override public Jsonb build() {
-            if (config == null) config = new JsonbConfig();
             if (jsonpProvider == null) jsonpProvider = JsonProvider.provider();
             return new ApJsonb(config, jsonpProvider);
         }

@@ -1,10 +1,12 @@
 package test;
 
+import com.github.t1.jsonbap.test.Address;
 import jakarta.json.Json;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
 import jakarta.json.bind.spi.JsonbProvider;
+import jakarta.json.spi.JsonProvider;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -15,39 +17,55 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.BDDAssertions.then;
+import static test.JsonbIT.TestConfig.FORMATTED;
+import static test.JsonbIT.TestConfig.FORMATTED_AND_NULL_VALUES;
+import static test.JsonbIT.TestConfig.PLAIN;
 
 abstract class JsonbIT extends AbstractJsonIT {
     protected static Jsonb builder(Class<? extends JsonbProvider> provider, TestConfig testConfig) {
         return JsonbBuilder.newBuilder(provider.getName())
-                .withConfig(testConfig.toJsonConfig())
+                .withConfig(testConfig == null ? new JsonbConfig() : testConfig.toJsonConfig())
+                .withProvider(testConfig != null && testConfig.jsonpProvider ? JsonProvider.provider() : null)
                 .build();
     }
 
     @Override String toJson(Object object) {
-        return toJson(object, new TestConfig(false, false));
+        return toJson(object, PLAIN);
+    }
+
+    @Test void shouldSerializeWithoutConfig() {
+        var json = toJson(DATA, null);
+
+        then(json).isEqualTo(repeatedJson(false));
+    }
+
+    @Test void shouldSerializeWithJsonpProvider() {
+        var json = toJson(DATA, null);
+
+        then(json).isEqualTo(repeatedJson(false));
     }
 
     @Test void shouldSerializeFormatted() {
-        var json = toJson(DATA, new TestConfig(true, false));
+        var json = toJson(DATA, FORMATTED);
 
         then(json).isEqualTo(prettyPrint(repeatedJson(false)));
     }
 
     @Test void shouldSerializeNullValues() {
-        var json = toJson(DATA, new TestConfig(true, true));
+        var json = toJson(DATA, FORMATTED_AND_NULL_VALUES);
 
         then(json).isEqualTo(prettyPrint(repeatedJson(true)));
     }
 
     @Test void shouldSerializeFormattedNullValues() {
-        var json = toJson(DATA, new TestConfig(true, true));
+        var json = toJson(DATA, FORMATTED_AND_NULL_VALUES);
 
         then(json).isEqualTo(prettyPrint(repeatedJson(true)));
     }
 
     @Test void shouldSerializeWithType() throws Exception {
         String json;
-        try (var jsonb = jsonb(new TestConfig(false, false))) {
+        try (var jsonb = jsonb(PLAIN)) {
 
             json = jsonb.toJson(DATA, List.class);
         }
@@ -57,7 +75,7 @@ abstract class JsonbIT extends AbstractJsonIT {
 
     @Test void shouldSerializeToWriter() throws Exception {
         var writer = new StringWriter();
-        try (var jsonb = jsonb(new TestConfig(false, false))) {
+        try (var jsonb = jsonb(PLAIN)) {
 
             jsonb.toJson(DATA, writer);
         }
@@ -67,7 +85,7 @@ abstract class JsonbIT extends AbstractJsonIT {
 
     @Test void shouldSerializeToWriterWithType() throws Exception {
         var writer = new StringWriter();
-        try (var jsonb = jsonb(new TestConfig(false, false))) {
+        try (var jsonb = jsonb(PLAIN)) {
 
             jsonb.toJson(DATA, List.class, writer);
         }
@@ -77,7 +95,7 @@ abstract class JsonbIT extends AbstractJsonIT {
 
     @Test void shouldSerializeToOutputStream() throws Exception {
         var outputStream = new ByteArrayOutputStream();
-        try (var jsonb = jsonb(new TestConfig(false, false))) {
+        try (var jsonb = jsonb(PLAIN)) {
 
             jsonb.toJson(DATA, outputStream);
         }
@@ -87,7 +105,7 @@ abstract class JsonbIT extends AbstractJsonIT {
 
     @Test void shouldSerializeToOutputStreamWithType() throws Exception {
         var outputStream = new ByteArrayOutputStream();
-        try (var jsonb = jsonb(new TestConfig(false, false))) {
+        try (var jsonb = jsonb(PLAIN)) {
 
             jsonb.toJson(DATA, List.class, outputStream);
         }
@@ -96,7 +114,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeNull() throws Exception {
-        try (var jsonb = jsonb(new TestConfig(true, true))) {
+        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
 
             var json = jsonb.toJson(null);
 
@@ -105,7 +123,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeJsonValues() throws Exception {
-        try (var jsonb = jsonb(new TestConfig(true, true))) {
+        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
 
             var json = jsonb.toJson(Json.createObjectBuilder()
                     .add("string", Json.createValue("foo"))
@@ -135,7 +153,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeBigInteger() throws Exception {
-        try (var jsonb = jsonb(new TestConfig(true, true))) {
+        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
 
             var json = jsonb.toJson(BigInteger.valueOf(123456));
 
@@ -144,7 +162,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeBigDecimal() throws Exception {
-        try (var jsonb = jsonb(new TestConfig(true, true))) {
+        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
 
             var json = jsonb.toJson(BigDecimal.valueOf(123.456d));
 
@@ -153,7 +171,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeLong() throws Exception {
-        try (var jsonb = jsonb(new TestConfig(true, true))) {
+        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
 
             var json = jsonb.toJson(123456L);
 
@@ -162,7 +180,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeDouble() throws Exception {
-        try (var jsonb = jsonb(new TestConfig(true, true))) {
+        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
 
             var json = jsonb.toJson(123.456d);
 
@@ -171,11 +189,67 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeBoolean() throws Exception {
-        try (var jsonb = jsonb(new TestConfig(true, true))) {
+        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
 
             var json = jsonb.toJson(true);
 
             then(json).isEqualTo("true");
+        }
+    }
+
+    @Test void shouldSerializeListWithNullWithNullValues() throws Exception {
+        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
+
+            var people = new java.util.ArrayList<Address>();
+            people.add(address(0));
+            people.add(null);
+            people.add(address(2));
+            var json = jsonb.toJson(people);
+
+            then(json).isEqualTo("""
+                    [
+                        {
+                            "city": "Somewhere-0",
+                            "country": null,
+                            "state": null,
+                            "street": "12000 Main Street",
+                            "zip": 50000
+                        },
+                        null,
+                        {
+                            "city": "Somewhere-2",
+                            "country": null,
+                            "state": null,
+                            "street": "12002 Main Street",
+                            "zip": 50002
+                        }
+                    ]""");
+        }
+    }
+
+    @Test void shouldSerializeListWithNullNoNullValues() throws Exception {
+        try (var jsonb = jsonb(FORMATTED)) {
+
+            var people = new java.util.ArrayList<Address>();
+            people.add(address(0));
+            people.add(null);
+            people.add(address(2));
+            var json = jsonb.toJson(people);
+
+            then(json).isEqualTo("""
+                    [
+                        {
+                            "city": "Somewhere-0",
+                            "street": "12000 Main Street",
+                            "zip": 50000
+                        },
+                        null,
+                        {
+                            "city": "Somewhere-2",
+                            "street": "12002 Main Street",
+                            "zip": 50002
+                        }
+                    ]""");
         }
     }
 
@@ -189,13 +263,14 @@ abstract class JsonbIT extends AbstractJsonIT {
 
     protected abstract Jsonb jsonb(TestConfig testConfig);
 
-    protected record TestConfig(boolean formatted, boolean nullValues) {
+    protected record TestConfig(boolean formatted, boolean nullValues, boolean jsonpProvider) {
+        static final TestConfig PLAIN = new TestConfig(false, false, false);
+        static final TestConfig FORMATTED = new TestConfig(true, false, false);
+        static final TestConfig NULL_VALUES = new TestConfig(false, true, false);
+        static final TestConfig FORMATTED_AND_NULL_VALUES = new TestConfig(true, true, false);
+
         public static Stream<TestConfig> stream() {
-            return Stream.of(
-                    new TestConfig(false, false),
-                    new TestConfig(true, false),
-                    new TestConfig(false, true),
-                    new TestConfig(true, true));
+            return Stream.of(null, PLAIN, FORMATTED, NULL_VALUES, FORMATTED_AND_NULL_VALUES);
         }
 
         public JsonbConfig toJsonConfig() {
