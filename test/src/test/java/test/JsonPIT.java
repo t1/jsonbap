@@ -1,7 +1,10 @@
 package test;
 
 import com.github.t1.jsonbap.test.Address;
+import com.github.t1.jsonbap.test.Cat;
+import com.github.t1.jsonbap.test.Dog;
 import com.github.t1.jsonbap.test.Person;
+import com.github.t1.jsonbap.test.Pet;
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
 
@@ -45,6 +48,15 @@ public class JsonPIT extends AbstractJsonIT {
             out.write("lastName", object.getLastName());
         }
         out.write("member", object.getMember());
+        if (object.getPets() != null) {
+            out.writeStartArray("pets");
+            for (Pet pet : object.getPets()) {
+                if (pet != null) {
+                    toJson(pet, out);
+                }
+            }
+            out.writeEnd();
+        }
         out.write("registrationTimestamp", object.getRegistrationTimestamp());
         if (object.getRoles() != null) {
             out.writeStartArray("roles");
@@ -74,5 +86,31 @@ public class JsonPIT extends AbstractJsonIT {
         if (object.getZip() != null) {
             out.write("zip", object.getZip());
         }
+    }
+
+    private static void toJson(Pet object, JsonGenerator out) {
+        if (object instanceof Cat cat) toJson(cat, out);
+        else if (object instanceof Dog dog) toJson(dog, out);
+        else throw new IllegalArgumentException("unknown type: " + object);
+    }
+
+    private static void toJson(Cat object, JsonGenerator out) {
+        out.writeStartObject();
+        out.write("@type", "cat");
+        out.write("isCat", object.getIsCat());
+        if (object.getName() != null) {
+            out.write("name", object.getName());
+        }
+        out.writeEnd();
+    }
+
+    private static void toJson(Dog object, JsonGenerator out) {
+        out.writeStartObject();
+        out.write("@type", "dog");
+        out.write("isDog", object.getIsDog());
+        if (object.getName() != null) {
+            out.write("name", object.getName());
+        }
+        out.writeEnd();
     }
 }

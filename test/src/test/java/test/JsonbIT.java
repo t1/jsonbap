@@ -8,6 +8,8 @@ import jakarta.json.bind.JsonbConfig;
 import jakarta.json.bind.spi.JsonbProvider;
 import jakarta.json.spi.JsonProvider;
 import org.junit.jupiter.api.Test;
+import com.github.t1.jsonbap.test.Cat;
+import com.github.t1.jsonbap.test.Dog;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
@@ -29,9 +31,36 @@ abstract class JsonbIT extends AbstractJsonIT {
                 .build();
     }
 
+    protected record TestConfig(boolean formatted, boolean nullValues, boolean jsonpProvider) {
+        static final TestConfig PLAIN = new TestConfig(false, false, false);
+        static final TestConfig FORMATTED = new TestConfig(true, false, false);
+        static final TestConfig NULL_VALUES = new TestConfig(false, true, false);
+        static final TestConfig FORMATTED_AND_NULL_VALUES = new TestConfig(true, true, false);
+
+        public static Stream<TestConfig> stream() {
+            return Stream.of(null, PLAIN, FORMATTED, NULL_VALUES, FORMATTED_AND_NULL_VALUES);
+        }
+
+        public JsonbConfig toJsonConfig() {
+            return new JsonbConfig().withFormatting(formatted).withNullValues(nullValues);
+        }
+    }
+
     @Override String toJson(Object object) {
         return toJson(object, PLAIN);
     }
+
+    private String toJson(Object object, TestConfig testConfig) {
+        try (var jsonb = jsonb(testConfig)) {
+            return jsonb.toJson(object);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected abstract Jsonb jsonb(TestConfig testConfig);
+
+    protected Jsonb jsonb() {return jsonb(FORMATTED_AND_NULL_VALUES);}
 
     @Test void shouldSerializeWithoutConfig() {
         var json = toJson(DATA, null);
@@ -114,7 +143,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeNull() throws Exception {
-        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
+        try (var jsonb = jsonb()) {
 
             var json = jsonb.toJson(null);
 
@@ -123,7 +152,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeJsonValues() throws Exception {
-        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
+        try (var jsonb = jsonb()) {
 
             var json = jsonb.toJson(Json.createObjectBuilder()
                     .add("string", Json.createValue("foo"))
@@ -153,7 +182,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeBigInteger() throws Exception {
-        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
+        try (var jsonb = jsonb()) {
 
             var json = jsonb.toJson(BigInteger.valueOf(123456));
 
@@ -162,7 +191,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeBigDecimal() throws Exception {
-        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
+        try (var jsonb = jsonb()) {
 
             var json = jsonb.toJson(BigDecimal.valueOf(123.456d));
 
@@ -171,7 +200,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeLong() throws Exception {
-        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
+        try (var jsonb = jsonb()) {
 
             var json = jsonb.toJson(123456L);
 
@@ -180,7 +209,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeDouble() throws Exception {
-        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
+        try (var jsonb = jsonb()) {
 
             var json = jsonb.toJson(123.456d);
 
@@ -189,7 +218,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeBoolean() throws Exception {
-        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
+        try (var jsonb = jsonb()) {
 
             var json = jsonb.toJson(true);
 
@@ -198,7 +227,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeListWithNullWithNullValues() throws Exception {
-        try (var jsonb = jsonb(FORMATTED_AND_NULL_VALUES)) {
+        try (var jsonb = jsonb()) {
 
             var people = new java.util.ArrayList<Address>();
             people.add(address(0));
@@ -253,28 +282,45 @@ abstract class JsonbIT extends AbstractJsonIT {
         }
     }
 
-    private String toJson(Object object, TestConfig testConfig) {
-        try (var jsonb = jsonb(testConfig)) {
-            return jsonb.toJson(object);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    @Test void shouldSerializeSubtypeCat() throws Exception {
+        try (var jsonb = jsonb(PLAIN)) {
+
+            var json = jsonb.toJson(new Cat());
+
+            then(json).isEqualTo("{\"@type\":\"cat\",\"isCat\":true}");
         }
     }
 
-    protected abstract Jsonb jsonb(TestConfig testConfig);
+    @Test void shouldSerializeSubtypeDog() throws Exception {
+        try (var jsonb = jsonb(PLAIN)) {
 
-    protected record TestConfig(boolean formatted, boolean nullValues, boolean jsonpProvider) {
-        static final TestConfig PLAIN = new TestConfig(false, false, false);
-        static final TestConfig FORMATTED = new TestConfig(true, false, false);
-        static final TestConfig NULL_VALUES = new TestConfig(false, true, false);
-        static final TestConfig FORMATTED_AND_NULL_VALUES = new TestConfig(true, true, false);
+            var json = jsonb.toJson(new Dog());
 
-        public static Stream<TestConfig> stream() {
-            return Stream.of(null, PLAIN, FORMATTED, NULL_VALUES, FORMATTED_AND_NULL_VALUES);
-        }
-
-        public JsonbConfig toJsonConfig() {
-            return new JsonbConfig().withFormatting(formatted).withNullValues(nullValues);
+            then(json).isEqualTo("{\"@type\":\"dog\",\"isDog\":true}");
         }
     }
+
+    @Test void shouldSerializeAnimalList() throws Exception {
+        try (var jsonb = jsonb()) {
+
+            var list = List.of(new Cat("tabula"), new Dog("rasa"));
+            var json = jsonb.toJson(list);
+
+            then(json).isEqualTo("""
+                    [
+                        {
+                            "@type": "cat",
+                            "isCat": true,
+                            "name": "tabula"
+                        },
+                        {
+                            "@type": "dog",
+                            "isDog": true,
+                            "name": "rasa"
+                        }
+                    ]""");
+        }
+    }
+
+    // TODO nested classes
 }

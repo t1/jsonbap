@@ -2,6 +2,8 @@ package com.github.t1.jsonbap.impl;
 
 import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.jsonbap.api.Jsonb;
+import jakarta.json.bind.annotation.JsonbSubtype;
+import jakarta.json.bind.annotation.JsonbTypeInfo;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
@@ -34,10 +36,29 @@ class JsonbSerializerGeneratorTest {
         String country;
     }
 
+    @JsonbTypeInfo({
+            @JsonbSubtype(alias = "cat", type = Cat.class),
+            @JsonbSubtype(alias = "dog", type = Dog.class)
+    })
+    interface Pet {}
+
+    @Jsonb
+    public static class Cat implements Pet {
+        @SuppressWarnings("unused")
+        public boolean getIsCat() {return true;}
+    }
+
+    @Jsonb
+    public static class Dog implements Pet {
+        @SuppressWarnings("unused")
+        public boolean getIsDog() {return true;}
+    }
+
     @AfterEach
     void tearDown() {
         ENV.clearCreatedResources();
     }
+
 
     @Test
     void shouldGeneratePersonWriter() {
@@ -108,6 +129,41 @@ class JsonbSerializerGeneratorTest {
                                 context.serialize("state", object.getState(), out);
                                 context.serialize("street", object.getStreet(), out);
                                 context.serialize("zip", object.getZip(), out);
+                                out.writeEnd();
+                            }
+                        
+                        }
+                        """);
+    }
+
+    @Test
+    void shouldGenerateCatWriter() {
+        var type = ENV.type(Cat.class);
+
+        var generator = new JsonbSerializerGenerator(type);
+
+        var className = generator.className();
+        then(className).isEqualTo(Cat.class.getSimpleName() + "$$JsonbSerializer");
+        try (var typeGenerator = new TypeGenerator(log, type.getPackage(), className)) {
+            generator.generate(typeGenerator);
+        }
+        then(ENV.getCreatedResource(SOURCE_OUTPUT, Cat.class.getPackage().getName(), className)).isEqualTo(
+                """
+                        package com.github.t1.jsonbap.impl;
+                        
+                        import javax.annotation.processing.Generated;
+                        
+                        import jakarta.json.bind.serializer.JsonbSerializer;
+                        import jakarta.json.bind.serializer.SerializationContext;
+                        import jakarta.json.stream.JsonGenerator;
+
+                        @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
+                        public class Cat$$JsonbSerializer implements JsonbSerializer<Cat> {
+                            @Override
+                            public void serialize(Cat object, JsonGenerator out, SerializationContext context) {
+                                out.writeStartObject();
+                                out.write("@type", "cat");
+                                out.write("isCat", object.getIsCat());
                                 out.writeEnd();
                             }
                         

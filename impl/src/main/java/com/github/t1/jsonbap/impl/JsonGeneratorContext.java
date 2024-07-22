@@ -3,7 +3,7 @@ package com.github.t1.jsonbap.impl;
 import jakarta.json.bind.serializer.SerializationContext;
 import jakarta.json.stream.JsonGenerator;
 
-public record JsonGeneratorContext(boolean writeNullValues) implements SerializationContext {
+record JsonGeneratorContext(boolean writeNullValues) implements SerializationContext {
     @Override public <T> void serialize(String key, T object, JsonGenerator generator) {
         if (object == null) {
             if (writeNullValues) {

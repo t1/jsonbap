@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Singular;
 
 import java.util.List;
 
@@ -26,8 +27,10 @@ public class Person {
     Address formerAddress;
 
     boolean member;
-    List<String> roles;
+    @Singular List<String> roles;
     long registrationTimestamp;
+
+    @Singular List<Pet> pets;
 
     public String getFirstName() {return firstName;}
 
@@ -46,4 +49,6 @@ public class Person {
     public List<String> getRoles() {return roles;}
 
     public long getRegistrationTimestamp() {return registrationTimestamp;}
+
+    public List<Pet> getPets() {return pets;}
 }

@@ -46,17 +46,23 @@ public class ApJsonbProvider extends JsonbProvider {
     private static final Map<Type, JsonbSerializer<?>> SERIALIZERS = new ConcurrentHashMap<>();
 
     static {
-        SERIALIZERS.put(List.class, new Iterable$$JsonbSerializer());
-        SERIALIZERS.put(ArrayList.class, new Iterable$$JsonbSerializer());
-        // ---------- Types directly supported by JsonGenerator:
-        SERIALIZERS.put(JsonValue.class, new JsonValue$$JsonbSerializer());
-        SERIALIZERS.put(String.class, new String$$JsonbSerializer());
-        SERIALIZERS.put(BigInteger.class, new BigInteger$$JsonbSerializer());
-        SERIALIZERS.put(BigDecimal.class, new BigDecimal$$JsonbSerializer());
-        SERIALIZERS.put(Integer.class, new Integer$$JsonbSerializer());
-        SERIALIZERS.put(Long.class, new Long$$JsonbSerializer());
-        SERIALIZERS.put(Double.class, new Double$$JsonbSerializer());
-        SERIALIZERS.put(Boolean.class, new Boolean$$JsonbSerializer());
+        try {
+            SERIALIZERS.put(List.class, new Iterable$$JsonbSerializer());
+            SERIALIZERS.put(Class.forName("java.util.ImmutableCollections$List12"), new Iterable$$JsonbSerializer());
+            SERIALIZERS.put(Class.forName("java.util.Collections$UnmodifiableRandomAccessList"), new Iterable$$JsonbSerializer());
+            SERIALIZERS.put(ArrayList.class, new Iterable$$JsonbSerializer());
+            // ---------- Types directly supported by JsonGenerator:
+            SERIALIZERS.put(JsonValue.class, new JsonValue$$JsonbSerializer());
+            SERIALIZERS.put(String.class, new String$$JsonbSerializer());
+            SERIALIZERS.put(BigInteger.class, new BigInteger$$JsonbSerializer());
+            SERIALIZERS.put(BigDecimal.class, new BigDecimal$$JsonbSerializer());
+            SERIALIZERS.put(Integer.class, new Integer$$JsonbSerializer());
+            SERIALIZERS.put(Long.class, new Long$$JsonbSerializer());
+            SERIALIZERS.put(Double.class, new Double$$JsonbSerializer());
+            SERIALIZERS.put(Boolean.class, new Boolean$$JsonbSerializer());
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("can't initialize jsonb serializers", e);
+        }
     }
 
     public static <T> JsonbSerializer<T> serializerFor(Object object) {

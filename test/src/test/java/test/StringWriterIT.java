@@ -1,7 +1,10 @@
 package test;
 
 import com.github.t1.jsonbap.test.Address;
+import com.github.t1.jsonbap.test.Cat;
+import com.github.t1.jsonbap.test.Dog;
 import com.github.t1.jsonbap.test.Person;
+import com.github.t1.jsonbap.test.Pet;
 import lombok.SneakyThrows;
 
 import java.io.IOException;
@@ -50,6 +53,19 @@ public class StringWriterIT extends AbstractJsonIT {
             delim = ',';
         }
         out.append(delim).append("\"member\":").append(Boolean.toString(object.getMember()));
+        if (object.getPets() != null) {
+            out.append(delim).append("\"pets\":[");
+            var first = true;
+            for (Pet item : object.getPets()) {
+                if (item != null) {
+                    if (!first) out.append(',');
+                    toJson(item, out);
+                    first = false;
+                }
+            }
+            out.append("]");
+            delim = ',';
+        }
         out.append(delim).append("\"registrationTimestamp\":").append(Long.toString(object.getRegistrationTimestamp()));
         if (object.getRoles() != null) {
             out.append(delim).append("\"roles\":[");
@@ -87,6 +103,36 @@ public class StringWriterIT extends AbstractJsonIT {
         }
         if (object.getZip() != null) {
             out.append(delim).append("\"zip\":").append(object.getZip().toString());
+            delim = ',';
+        }
+        out.append("}");
+    }
+
+    private static void toJson(Pet object, Writer out) throws IOException {
+        if (object instanceof Cat cat) toJson(cat, out);
+        else if (object instanceof Dog dog) toJson(dog, out);
+        else throw new IllegalArgumentException("unknown type: " + object);
+    }
+
+    private static void toJson(Cat object, Writer out) throws IOException {
+        char delim = '{';
+        out.append(delim).append("\"@type\":\"cat\"");
+        delim = ',';
+        out.append(delim).append("\"isCat\":true");
+        if (object.getName() != null) {
+            out.append(delim).append("\"name\":\"").append(object.getName()).append('"');
+            delim = ',';
+        }
+        out.append("}");
+    }
+
+    private static void toJson(Dog object, Writer out) throws IOException {
+        char delim = '{';
+        out.append(delim).append("\"@type\":\"dog\"");
+        delim = ',';
+        out.append(delim).append("\"isDog\":true");
+        if (object.getName() != null) {
+            out.append(delim).append("\"name\":\"").append(object.getName()).append('"');
             delim = ',';
         }
         out.append("}");

@@ -1,13 +1,14 @@
 package test;
 
 import com.github.t1.jsonbap.test.Address;
+import com.github.t1.jsonbap.test.Cat;
+import com.github.t1.jsonbap.test.Dog;
 import com.github.t1.jsonbap.test.Person;
 import jakarta.json.Json;
 import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -42,6 +43,11 @@ abstract class AbstractJsonIT {
                 (nullValues ? "\"formerAddress\":null," : "") +
                 "\"lastName\":\"Doe-" + i + "\"," +
                 "\"member\":" + (i % 2 == 0) + "," +
+                "\"pets\":[" +
+                        /**/"{\"@type\":\"cat\",\"isCat\":true,\"name\":\"foo-" + i + "\"}," +
+                        /**/"{\"@type\":\"cat\",\"isCat\":true,\"name\":\"bar-" + i + "\"}," +
+                        /**/"{\"@type\":\"dog\",\"isDog\":true,\"name\":\"baz-" + i + "\"}" +
+                "]," +
                 "\"registrationTimestamp\":" + (i + 10000000000L) + "," +
                 "\"roles\":[\"role-1\",\"role-...\",\"role-" + i + "\"]}";
     }
@@ -56,7 +62,12 @@ abstract class AbstractJsonIT {
                 .formerAddress(null)
                 .member(i % 2 == 0)
                 .registrationTimestamp(i + 10000000000L)
-                .roles(new ArrayList<>(List.of("role-1", "role-...", "role-" + i)))
+                .role("role-1")
+                .role("role-...")
+                .role("role-" + i)
+                .pet(new Cat("foo-" + i))
+                .pet(new Cat("bar-" + i))
+                .pet(new Dog("baz-" + i))
                 .build();
     }
 

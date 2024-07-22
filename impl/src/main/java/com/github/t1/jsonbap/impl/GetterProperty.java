@@ -1,11 +1,13 @@
 package com.github.t1.jsonbap.impl;
 
 import com.github.t1.exap.reflection.Method;
+import com.github.t1.exap.reflection.Type;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.util.Set;
+import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 class GetterProperty implements Property {
@@ -31,6 +33,13 @@ class GetterProperty implements Property {
     @Getter @Accessors(fluent = true)
     private final String name;
     protected final String valueExpression;
+
+    static Stream<GetterProperty> getterProperties(Type type) {
+        return type.getAllMethods().stream()
+                .filter(GetterProperty::isGetter)
+                .map(GetterProperty::of)
+                .sorted();
+    }
 
     @Override public void write(StringBuilder out) {
         if (PRIMITIVE_TYPES.contains(typeName)) {

@@ -9,9 +9,10 @@ import jakarta.json.bind.serializer.SerializationContext;
 import jakarta.json.stream.JsonGenerator;
 
 import javax.annotation.processing.Generated;
-import java.util.List;
+import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
+import static com.github.t1.jsonbap.impl.GetterProperty.getterProperties;
+import static com.github.t1.jsonbap.impl.TypeProperty.typeProperty;
 
 class JsonbSerializerGenerator {
     private static Type type(Class<?> klass) {
@@ -29,9 +30,8 @@ class JsonbSerializerGenerator {
     }
 
     public void generate(TypeGenerator typeGenerator) {
-        typeGenerator.addImport(type(JsonGeneratorContext.class));
         typeGenerator.annotation(type(Generated.class))
-            .set("value", JsonbAnnotationProcessor.class.getName());
+                .set("value", JsonbAnnotationProcessor.class.getName());
         typeGenerator.addImplements(new TypeExpressionGenerator(typeGenerator, type(JsonbSerializer.class))
                 .withTypeArg(type));
 
@@ -46,18 +46,14 @@ class JsonbSerializerGenerator {
     private String body() {
         var body = new StringBuilder();
         body.append("out.writeStartObject();\n");
-        for (var property : properties()) {
-            property.write(body);
-        }
+        properties().forEach(property -> property.write(body));
         body.append("        out.writeEnd();");
         return body.toString();
     }
 
-    private List<Property> properties() {
-        return type.getAllMethods().stream()
-            .filter(GetterProperty::isGetter)
-            .map(GetterProperty::of)
-            .sorted()
-            .collect(toList());
+    private Stream<Property> properties() {
+        return Stream.concat(
+                typeProperty(type).stream(),
+                getterProperties(type));
     }
 }
