@@ -3,7 +3,7 @@ package com.github.t1.jsonbap.impl;
 import com.github.t1.exap.generator.TypeExpressionGenerator;
 import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.reflection.ReflectionProcessingEnvironment;
-import com.github.t1.exap.reflection.Type;
+import com.github.t1.exap.insight.Type;
 import jakarta.json.bind.serializer.JsonbSerializer;
 import jakarta.json.bind.serializer.SerializationContext;
 import jakarta.json.stream.JsonGenerator;

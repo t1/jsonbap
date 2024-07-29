@@ -1,8 +1,8 @@
 package com.github.t1.jsonbap.impl;
 
-import com.github.t1.exap.reflection.AnnotationWrapper;
-import com.github.t1.exap.reflection.Elemental;
-import com.github.t1.exap.reflection.Type;
+import com.github.t1.exap.insight.AnnotationWrapper;
+import com.github.t1.exap.insight.Elemental;
+import com.github.t1.exap.insight.Type;
 import lombok.RequiredArgsConstructor;
 
 import javax.lang.model.element.TypeElement;

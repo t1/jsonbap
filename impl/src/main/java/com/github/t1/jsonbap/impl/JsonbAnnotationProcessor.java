@@ -3,7 +3,7 @@ package com.github.t1.jsonbap.impl;
 import com.github.t1.exap.ExtendedAbstractProcessor;
 import com.github.t1.exap.Round;
 import com.github.t1.exap.SupportedAnnotationClasses;
-import com.github.t1.exap.reflection.Type;
+import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.api.Jsonb;
 import lombok.extern.slf4j.Slf4j;
 

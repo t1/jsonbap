@@ -1,7 +1,7 @@
 package com.github.t1.jsonbap.impl;
 
-import com.github.t1.exap.reflection.Method;
-import com.github.t1.exap.reflection.Type;
+import com.github.t1.exap.insight.Method;
+import com.github.t1.exap.insight.Type;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
