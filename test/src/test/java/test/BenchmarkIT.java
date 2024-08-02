@@ -39,11 +39,6 @@ public class BenchmarkIT {
     }
 
     @Benchmark
-    public void shouldSerializeJsonIter() {
-        run(new JsonIterIT());
-    }
-
-    @Benchmark
     public void shouldSerializeJackson() {
         run(new JacksonIT());
     }
