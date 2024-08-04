@@ -24,40 +24,21 @@ import static org.openjdk.jmh.annotations.Threads.MAX;
 @BenchmarkMode(AverageTime)
 @OutputTimeUnit(MICROSECONDS)
 public class BenchmarkIT {
-    static {
-        Locale.setDefault(Locale.US);
-    }
+    static {Locale.setDefault(Locale.US);}
 
-    @Benchmark
-    public void shouldSerializeYasson() {
-        run(new YassonIT());
-    }
+    @Benchmark public void shouldSerializeYasson() {run(new YassonIT());}
 
-    @Benchmark
-    public void shouldSerializeJsonbap() {
-        run(new JsonbapIT());
-    }
+    @Benchmark public void shouldSerializeJohnzon() {run(new JohnzonIT());}
 
-    @Benchmark
-    public void shouldSerializeJackson() {
-        run(new JacksonIT());
-    }
+    @Benchmark public void shouldSerializeJsonbap() {run(new JsonbapIT());}
 
-    @Benchmark
-    public void shouldSerializeStringWriter() {
-        run(new StringWriterIT());
-    }
+    @Benchmark public void shouldSerializeJackson() {run(new JacksonIT());}
 
-    @Benchmark
-    public void shouldSerializeJsonP() {
-        run(new JsonPIT());
-    }
+    @Benchmark public void shouldSerializeStringWriter() {run(new StringWriterIT());}
 
-    private static void run(AbstractJsonIT it) {
-        it.shouldSerialize();
-    }
+    @Benchmark public void shouldSerializeJsonP() {run(new JsonPIT());}
 
-    @Test void benchmark() throws Exception {
-        new Runner(new OptionsBuilder().build()).run();
-    }
+    private static void run(AbstractJsonIT it) {it.shouldSerialize();}
+
+    @Test void benchmark() throws Exception {new Runner(new OptionsBuilder().build()).run();}
 }

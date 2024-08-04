@@ -16,3 +16,35 @@ Nice side effect: If you should need to debug your JSON-B mappings, you can simp
 https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0[JSON-B] is a standard API for converting Java objects to and from JSON documents. It's part of the Jakarta EE platform and is used by many other libraries and frameworks. The reference implementation of JSON-B is https://github.com/eclipse-ee4j/yasson[Yasson], which was never designed to be fast, not even being production ready was a real design goal. https://github.com/FasterXML/jackson[Jackson], for example, is much faster and was in use for years before JSON-B, but it's not a standard API. Sadly, people conclude that JSON-B is slow and use Jackson instead.
 
 In principle, this works very similar to https://github.com/ngs-doo/dsl-json[DSL-Json], but with focus and proper support for JSON-B (when it's finally done).
+
+== Benchmark
+
+Careful: these benchmarks are obviously wrong.
+
+|===
+|Benchmark |Score |Error
+
+|Jackson
+|117.626
+|±  1.286
+
+|Johnzon
+|209.336
+|±  9.924
+
+|JsonP
+|1775.570
+|± 18.056
+
+|Jsonbap
+|146.648
+|±  1.126
+
+|StringWriter
+|142.689
+|±  3.918
+
+|Yasson
+|360.094
+|± 26.499
+|===

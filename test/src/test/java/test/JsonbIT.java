@@ -1,15 +1,16 @@
 package test;
 
 import com.github.t1.jsonbap.test.Address;
+import com.github.t1.jsonbap.test.Cat;
+import com.github.t1.jsonbap.test.Dog;
 import jakarta.json.Json;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
 import jakarta.json.bind.spi.JsonbProvider;
 import jakarta.json.spi.JsonProvider;
+import lombok.NonNull;
 import org.junit.jupiter.api.Test;
-import com.github.t1.jsonbap.test.Cat;
-import com.github.t1.jsonbap.test.Dog;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
@@ -24,11 +25,10 @@ import static test.JsonbIT.TestConfig.FORMATTED_AND_NULL_VALUES;
 import static test.JsonbIT.TestConfig.PLAIN;
 
 abstract class JsonbIT extends AbstractJsonIT {
-    protected static Jsonb builder(Class<? extends JsonbProvider> provider, TestConfig testConfig) {
+    protected static JsonbBuilder builder(Class<? extends JsonbProvider> provider, TestConfig testConfig) {
         return JsonbBuilder.newBuilder(provider.getName())
-                .withConfig(testConfig == null ? new JsonbConfig() : testConfig.toJsonConfig())
-                .withProvider(testConfig != null && testConfig.jsonpProvider ? JsonProvider.provider() : null)
-                .build();
+                .withConfig(testConfig.toJsonbConfig())
+                .withProvider(testConfig.toJsonpConfig());
     }
 
     protected record TestConfig(boolean formatted, boolean nullValues, boolean jsonpProvider) {
@@ -38,10 +38,12 @@ abstract class JsonbIT extends AbstractJsonIT {
         static final TestConfig FORMATTED_AND_NULL_VALUES = new TestConfig(true, true, false);
 
         public static Stream<TestConfig> stream() {
-            return Stream.of(null, PLAIN, FORMATTED, NULL_VALUES, FORMATTED_AND_NULL_VALUES);
+            return Stream.of(PLAIN, FORMATTED, NULL_VALUES, FORMATTED_AND_NULL_VALUES);
         }
 
-        public JsonbConfig toJsonConfig() {
+        public JsonProvider toJsonpConfig() {return jsonpProvider ? JsonProvider.provider() : null;}
+
+        public JsonbConfig toJsonbConfig() {
             return new JsonbConfig().withFormatting(formatted).withNullValues(nullValues);
         }
     }
@@ -50,7 +52,7 @@ abstract class JsonbIT extends AbstractJsonIT {
         return toJson(object, PLAIN);
     }
 
-    private String toJson(Object object, TestConfig testConfig) {
+    private String toJson(Object object, @NonNull TestConfig testConfig) {
         try (var jsonb = jsonb(testConfig)) {
             return jsonb.toJson(object);
         } catch (Exception e) {
@@ -61,18 +63,6 @@ abstract class JsonbIT extends AbstractJsonIT {
     protected abstract Jsonb jsonb(TestConfig testConfig);
 
     protected Jsonb jsonb() {return jsonb(FORMATTED_AND_NULL_VALUES);}
-
-    @Test void shouldSerializeWithoutConfig() {
-        var json = toJson(DATA, null);
-
-        then(json).isEqualTo(repeatedJson(false));
-    }
-
-    @Test void shouldSerializeWithJsonpProvider() {
-        var json = toJson(DATA, null);
-
-        then(json).isEqualTo(repeatedJson(false));
-    }
 
     @Test void shouldSerializeFormatted() {
         var json = toJson(DATA, FORMATTED);
@@ -184,18 +174,18 @@ abstract class JsonbIT extends AbstractJsonIT {
     @Test void shouldSerializeBigInteger() throws Exception {
         try (var jsonb = jsonb()) {
 
-            var json = jsonb.toJson(BigInteger.valueOf(123456));
+            var json = jsonb.toJson(new BigInteger("12345678901234567890"));
 
-            then(json).isEqualTo("123456");
+            then(json).isEqualTo("12345678901234567890");
         }
     }
 
     @Test void shouldSerializeBigDecimal() throws Exception {
         try (var jsonb = jsonb()) {
 
-            var json = jsonb.toJson(BigDecimal.valueOf(123.456d));
+            var json = jsonb.toJson(new BigDecimal("123456789012345678901234567890123456789.123"));
 
-            then(json).isEqualTo("123.456");
+            then(json).isEqualTo("123456789012345678901234567890123456789.123");
         }
     }
 

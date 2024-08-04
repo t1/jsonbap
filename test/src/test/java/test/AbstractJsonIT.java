@@ -19,8 +19,9 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.BDDAssertions.then;
 
 abstract class AbstractJsonIT {
-    private static final int N = 5;
-    protected static final List<Person> DATA = IntStream.range(0, N).mapToObj(AbstractJsonIT::person)
+    private static final int N = 10;
+    protected static final List<Person> DATA = IntStream.range(0, N)
+            .mapToObj(AbstractJsonIT::person)
             .collect(toList());
 
     protected static String repeatedJson(boolean nullValues) {
