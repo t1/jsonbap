@@ -11,6 +11,7 @@ import jakarta.json.stream.JsonGenerator;
 import javax.annotation.processing.Generated;
 import java.util.stream.Stream;
 
+import static com.github.t1.exap.generator.Visibility.PUBLIC;
 import static com.github.t1.jsonbap.impl.GetterProperty.getterProperties;
 import static com.github.t1.jsonbap.impl.TypeProperty.typeProperty;
 
@@ -26,7 +27,7 @@ class JsonbSerializerGenerator {
     }
 
     public String className() {
-        return type.getSimpleName() + "$$JsonbSerializer";
+        return type.getRelativeName().replace('.', '$') + "$$JsonbSerializer";
     }
 
     public void generate(TypeGenerator typeGenerator) {
@@ -35,7 +36,7 @@ class JsonbSerializerGenerator {
         typeGenerator.addImplements(new TypeExpressionGenerator(typeGenerator, type(JsonbSerializer.class))
                 .withTypeArg(type));
 
-        var toJson = typeGenerator.addMethod("serialize");
+        var toJson = typeGenerator.addMethod(PUBLIC, "serialize");
         toJson.annotation(type(Override.class));
         toJson.addParameter("object").type(new TypeExpressionGenerator(typeGenerator, type));
         toJson.addParameter("out").type(new TypeExpressionGenerator(typeGenerator, type(JsonGenerator.class)));

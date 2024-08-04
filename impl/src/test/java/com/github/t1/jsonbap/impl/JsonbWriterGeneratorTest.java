@@ -1,15 +1,12 @@
 package com.github.t1.jsonbap.impl;
 
 import com.github.t1.exap.generator.TypeGenerator;
-import com.github.t1.jsonbap.api.Jsonb;
+import com.github.t1.jsonbap.api.Bindable;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
 import static javax.tools.StandardLocation.SOURCE_OUTPUT;
@@ -17,38 +14,13 @@ import static org.assertj.core.api.BDDAssertions.then;
 
 @Slf4j
 class JsonbSerializerGeneratorTest {
-    @Getter
-    public static class Person {
-        String firstName;
-        String lastName;
-        int age;
-        Address address;
-        List<String> roles;
-    }
-
-    @Jsonb
-    @Getter
-    public static class Address {
-        String street;
-        Integer zip;
-        String city;
-        String state;
-        String country;
-    }
-
     @JsonbTypeInfo({
             @JsonbSubtype(alias = "cat", type = Cat.class),
             @JsonbSubtype(alias = "dog", type = Dog.class)
     })
     interface Pet {}
 
-    @Jsonb
-    public static class Cat implements Pet {
-        @SuppressWarnings("unused")
-        public boolean getIsCat() {return true;}
-    }
-
-    @Jsonb
+    @Bindable
     public static class Dog implements Pet {
         @SuppressWarnings("unused")
         public boolean getIsDog() {return true;}
@@ -83,6 +55,7 @@ class JsonbSerializerGeneratorTest {
 
                         @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
                         public class Person$$JsonbSerializer implements JsonbSerializer<Person> {
+
                             @Override
                             public void serialize(Person object, JsonGenerator out, SerializationContext context) {
                                 out.writeStartObject();
@@ -93,7 +66,6 @@ class JsonbSerializerGeneratorTest {
                                 context.serialize("roles", object.getRoles(), out);
                                 out.writeEnd();
                             }
-
                         }
                         """);
     }
@@ -121,6 +93,7 @@ class JsonbSerializerGeneratorTest {
 
                         @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
                         public class Address$$JsonbSerializer implements JsonbSerializer<Address> {
+                        
                             @Override
                             public void serialize(Address object, JsonGenerator out, SerializationContext context) {
                                 out.writeStartObject();
@@ -131,7 +104,6 @@ class JsonbSerializerGeneratorTest {
                                 context.serialize("zip", object.getZip(), out);
                                 out.writeEnd();
                             }
-                        
                         }
                         """);
     }
@@ -159,6 +131,7 @@ class JsonbSerializerGeneratorTest {
 
                         @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
                         public class Cat$$JsonbSerializer implements JsonbSerializer<Cat> {
+                        
                             @Override
                             public void serialize(Cat object, JsonGenerator out, SerializationContext context) {
                                 out.writeStartObject();
@@ -166,7 +139,6 @@ class JsonbSerializerGeneratorTest {
                                 out.write("isCat", object.getIsCat());
                                 out.writeEnd();
                             }
-                        
                         }
                         """);
     }

@@ -1,10 +1,10 @@
 package com.github.t1.jsonbap.test;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.github.t1.jsonbap.api.Jsonb;
+import com.github.t1.jsonbap.api.Bindable;
 import lombok.NoArgsConstructor;
 
-@Jsonb
+@Bindable
 @NoArgsConstructor
 @JsonPropertyOrder({"@type", "isCat", "name"})
 public class Cat implements Pet {

@@ -1,0 +1,28 @@
+package ee.jakarta.tck.json.bind.defaultmapping.untyped;
+
+@SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "unused"})
+public class UntypedMappingTest$1 {
+    private String stringProperty = "Test String";
+
+    public String getStringProperty() {
+        return stringProperty;
+    }
+
+    private Number numericProperty = 0;
+
+    public Number getNumericProperty() {
+        return numericProperty;
+    }
+
+    private boolean booleanProperty = false;
+
+    public boolean getBooleanProperty() {
+        return booleanProperty;
+    }
+
+    private Object nullProperty = null;
+
+    public Object getNullProperty() {
+        return nullProperty;
+    }
+}
