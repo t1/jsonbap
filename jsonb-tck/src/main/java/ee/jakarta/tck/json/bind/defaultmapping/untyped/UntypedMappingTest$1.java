@@ -2,6 +2,9 @@ package ee.jakarta.tck.json.bind.defaultmapping.untyped;
 
 @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "unused"})
 public class UntypedMappingTest$1 {
+    public UntypedMappingTest$1(UntypedMappingTest ignoreUnused) {
+    }
+
     private String stringProperty = "Test String";
 
     public String getStringProperty() {

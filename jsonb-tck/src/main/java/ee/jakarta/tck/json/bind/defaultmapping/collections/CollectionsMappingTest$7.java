@@ -5,11 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.HashSetContaine
 import java.util.HashSet;
 
 public class CollectionsMappingTest$7 extends HashSetContainer {
-    {
-        HashSet<String> instance = new HashSet<>() {{
-            add("Test 1");
-            add("Test 2");
-        }};
+    public CollectionsMappingTest$7(CollectionsMappingTest ignoreUnused, HashSet<String> instance) {
         setInstance(instance);
     }
 }

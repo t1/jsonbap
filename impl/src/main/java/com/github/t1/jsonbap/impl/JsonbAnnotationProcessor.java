@@ -27,7 +27,9 @@ public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
             generateSerializerFor(type);
         }
 
-        bindable.stream().flatMap(b -> b.getTypeProperties("value").stream()).forEach(this::process);
+        bindable.stream()
+                .flatMap(b -> b.getTypeProperties("value").stream())
+                .forEach(this::process);
     }
 
     private static void generateSerializerFor(Type type) {

@@ -5,11 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.LinkedListConta
 import java.util.LinkedList;
 
 public class CollectionsMappingTest$31 extends LinkedListContainer {
-    {
-        LinkedList<String> instance = new LinkedList<>() {{
-            add("Test 1");
-            add("Test 2");
-        }};
+    public CollectionsMappingTest$31(CollectionsMappingTest ignoreUnused, LinkedList<String> instance) {
         setInstance(instance);
     }
 }

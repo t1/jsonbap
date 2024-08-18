@@ -5,11 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.ArrayDequeConta
 import java.util.ArrayDeque;
 
 public class CollectionsMappingTest$35 extends ArrayDequeContainer {
-    {
-        ArrayDeque<String> instance = new ArrayDeque<>() {{
-            add("Test 1");
-            add("Test 2");
-        }};
+    public CollectionsMappingTest$35(CollectionsMappingTest ignoreUnused, ArrayDeque<String> instance) {
         setInstance(instance);
     }
 }

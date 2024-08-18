@@ -2,7 +2,7 @@
 
 [note]
 ====
-This project is in a very early stage and still far from ready for production use.
+This project is in a very early stage and still far from ready for production use. Currently, only 16% of the JSON-B TCK tests pass.
 ====
 
 `jsonbap` = JSON-B Annotation Processor

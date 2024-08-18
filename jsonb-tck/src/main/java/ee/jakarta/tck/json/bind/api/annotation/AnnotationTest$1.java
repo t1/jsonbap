@@ -1,14 +1,9 @@
 package ee.jakarta.tck.json.bind.api.annotation;
 
 import ee.jakarta.tck.json.bind.api.model.SimpleAnnotatedAdaptedContainer;
-import ee.jakarta.tck.json.bind.api.model.SimpleContainer;
 
 public class AnnotationTest$1 extends SimpleAnnotatedAdaptedContainer {
-    {
-        setInstance(new SimpleContainer() {
-            {
-                setInstance("Test String");
-            }
-        });
+    public AnnotationTest$1(AnnotationTest ignoreUnused) {
+        setInstance(new AnnotationTest$1$1(this));
     }
 }

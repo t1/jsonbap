@@ -4,15 +4,28 @@ import com.github.t1.jsonbap.impl.writers.Array$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.BigDecimal$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.BigInteger$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.Boolean$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.BooleanArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.Byte$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.ByteArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.CharArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.Character$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.Double$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.DoubleArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.Float$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.FloatArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.IntArray$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.Integer$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.Iterable$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.JsonValue$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.Long$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.LongArray$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.Null$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.Optional$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.OptionalDouble$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.OptionalInt$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.OptionalLong$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.Short$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.writers.ShortArray$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.String$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.writers.ToStringSerializer;
 import jakarta.json.JsonValue;
@@ -74,7 +87,7 @@ public class ApJsonbProvider extends JsonbProvider {
             SERIALIZERS.put(Optional.class, new Optional$$JsonbSerializer());
             SERIALIZERS.put(OptionalInt.class, new OptionalInt$$JsonbSerializer());
             SERIALIZERS.put(OptionalLong.class, new OptionalLong$$JsonbSerializer());
-            SERIALIZERS.put(OptionalDouble.class, new Optional$$JsonbSerializer());
+            SERIALIZERS.put(OptionalDouble.class, new OptionalDouble$$JsonbSerializer());
             SERIALIZERS.put(List.class, new Iterable$$JsonbSerializer());
             SERIALIZERS.put(ArrayList.class, new Iterable$$JsonbSerializer());
             SERIALIZERS.put(LinkedList.class, new Iterable$$JsonbSerializer());
@@ -109,12 +122,12 @@ public class ApJsonbProvider extends JsonbProvider {
             SERIALIZERS.put(String.class, new String$$JsonbSerializer());
             SERIALIZERS.put(BigInteger.class, new BigInteger$$JsonbSerializer());
             SERIALIZERS.put(BigDecimal.class, new BigDecimal$$JsonbSerializer());
-            SERIALIZERS.put(Byte.class, new Integer$$JsonbSerializer());
-            SERIALIZERS.put(Character.class, new Integer$$JsonbSerializer());
-            SERIALIZERS.put(Short.class, new Integer$$JsonbSerializer());
+            SERIALIZERS.put(Byte.class, new Byte$$JsonbSerializer());
+            SERIALIZERS.put(Character.class, new Character$$JsonbSerializer());
+            SERIALIZERS.put(Short.class, new Short$$JsonbSerializer());
             SERIALIZERS.put(Integer.class, new Integer$$JsonbSerializer());
             SERIALIZERS.put(Long.class, new Long$$JsonbSerializer());
-            SERIALIZERS.put(Float.class, new Double$$JsonbSerializer());
+            SERIALIZERS.put(Float.class, new Float$$JsonbSerializer());
             SERIALIZERS.put(Double.class, new Double$$JsonbSerializer());
             SERIALIZERS.put(Boolean.class, new Boolean$$JsonbSerializer());
         } catch (ClassNotFoundException e) {
@@ -141,6 +154,14 @@ public class ApJsonbProvider extends JsonbProvider {
             return new JsonValue$$JsonbSerializer();
         }
         if (type instanceof Class<?> c && c.isArray()) {
+            if (c.componentType() == boolean.class) return BooleanArray$$JsonbSerializer.INSTANCE;
+            if (c.componentType() == byte.class) return ByteArray$$JsonbSerializer.INSTANCE;
+            if (c.componentType() == short.class) return ShortArray$$JsonbSerializer.INSTANCE;
+            if (c.componentType() == char.class) return CharArray$$JsonbSerializer.INSTANCE;
+            if (c.componentType() == int.class) return IntArray$$JsonbSerializer.INSTANCE;
+            if (c.componentType() == long.class) return LongArray$$JsonbSerializer.INSTANCE;
+            if (c.componentType() == float.class) return FloatArray$$JsonbSerializer.INSTANCE;
+            if (c.componentType() == double.class) return DoubleArray$$JsonbSerializer.INSTANCE;
             return Array$$JsonbSerializer.INSTANCE;
         }
         try {

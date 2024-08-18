@@ -11,17 +11,28 @@ import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 class GetterProperty implements Property {
-    static boolean isGetter(Method method) {
-        return method.isPublic()
-               && method.getName().startsWith("get") // TODO booleans may start with `is`
-               && !"java.lang.Object".equals(method.getDeclaringType().getFullName());
+    static Stream<GetterProperty> getterProperties(Type type) {
+        return type.getAllMethods().stream()
+                .filter(GetterProperty::isGetter)
+                .map(GetterProperty::of)
+                .sorted();
     }
 
-    static GetterProperty of(Method method) {
+    private static boolean isGetter(Method method) {
+        return method.isPublic()
+               && method.getParameters().isEmpty()
+               && method.getName().length() > 3
+               && method.getName().startsWith("get") // TODO booleans may start with `is`
+               && Character.isUpperCase(method.getName().charAt(3))
+               && !"java.lang.Object".equals(method.getDeclaringType().getFullName())
+               && !"void".equals(method.getReturnType().getFullName());
+    }
+
+    private static GetterProperty of(Method method) {
         return of(method.getReturnType().getFullName(), nameFrom(method.getName()), "object." + method.getName() + "()");
     }
 
-    static GetterProperty of(String typeName, String name, String valueExpression) {
+    private static GetterProperty of(String typeName, String name, String valueExpression) {
         return new GetterProperty(typeName, name, valueExpression);
     }
 
@@ -34,12 +45,7 @@ class GetterProperty implements Property {
     private final String name;
     protected final String valueExpression;
 
-    static Stream<GetterProperty> getterProperties(Type type) {
-        return type.getAllMethods().stream()
-                .filter(GetterProperty::isGetter)
-                .map(GetterProperty::of)
-                .sorted();
-    }
+    @Override public String toString() {return "getter:" + name + "->" + typeName;}
 
     @Override public void write(StringBuilder out) {
         if (PRIMITIVE_TYPES.contains(typeName)) {

@@ -5,11 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.LinkedHashSetCo
 import java.util.LinkedHashSet;
 
 public class CollectionsMappingTest$15 extends LinkedHashSetContainer {
-    {
-        LinkedHashSet<String> instance = new LinkedHashSet<>() {{
-            add("Test 1");
-            add("Test 2");
-        }};
+    public CollectionsMappingTest$15(CollectionsMappingTest ignoreUnused, LinkedHashSet<String> instance) {
         setInstance(instance);
     }
 }
