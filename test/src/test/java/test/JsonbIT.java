@@ -1,5 +1,6 @@
 package test;
 
+import com.github.t1.jsonbap.api.Bindable;
 import com.github.t1.jsonbap.test.Address;
 import com.github.t1.jsonbap.test.Cat;
 import com.github.t1.jsonbap.test.Dog;
@@ -9,7 +10,9 @@ import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
 import jakarta.json.bind.spi.JsonbProvider;
 import jakarta.json.spi.JsonProvider;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.experimental.SuperBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -20,6 +23,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.BDDAssertions.then;
+import static test.JsonbIT.Product.PRODUCT;
 import static test.JsonbIT.TestConfig.FORMATTED;
 import static test.JsonbIT.TestConfig.FORMATTED_AND_NULL_VALUES;
 import static test.JsonbIT.TestConfig.PLAIN;
@@ -312,5 +316,32 @@ abstract class JsonbIT extends AbstractJsonIT {
         }
     }
 
-    // TODO nested classes
+    @Bindable
+    @SuperBuilder
+    @NoArgsConstructor
+    @SuppressWarnings("unused")
+    public static class Product {
+        public static final Product PRODUCT = Product.builder()
+                .id(123)
+                .description("foo")
+                .hiddenPackagePrivate(true)
+                .hiddenProtected(true)
+                .hiddenPrivate(true)
+                .build();
+
+        public long id;
+        public String description;
+        boolean hiddenPackagePrivate;
+        protected boolean hiddenProtected;
+        private boolean hiddenPrivate;
+    }
+
+    @Test void shouldSerializeField() throws Exception {
+        try (var jsonb = jsonb(PLAIN)) {
+
+            var json = jsonb.toJson(PRODUCT);
+
+            then(json).isEqualTo("{\"description\":\"foo\",\"id\":123}");
+        }
+    }
 }

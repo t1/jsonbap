@@ -12,6 +12,7 @@ import javax.annotation.processing.Generated;
 import java.util.stream.Stream;
 
 import static com.github.t1.exap.generator.Visibility.PUBLIC;
+import static com.github.t1.jsonbap.impl.FieldProperty.fieldProperties;
 import static com.github.t1.jsonbap.impl.GetterProperty.getterProperties;
 import static com.github.t1.jsonbap.impl.TypeProperty.typeProperty;
 
@@ -54,7 +55,12 @@ class JsonbSerializerGenerator {
 
     private Stream<Property> properties() {
         return Stream.concat(
-                typeProperty(type).stream(),
-                getterProperties(type));
+                Stream.concat(
+                        typeProperty(type).stream(),
+                        getterProperties(type)),
+                Stream.concat(
+                        Stream.empty(),
+                        fieldProperties(type)))
+                .sorted();
     }
 }

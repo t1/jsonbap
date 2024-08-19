@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 
-import java.util.Set;
 import java.util.stream.Stream;
 
 @RequiredArgsConstructor
@@ -14,8 +13,7 @@ class GetterProperty implements Property {
     static Stream<GetterProperty> getterProperties(Type type) {
         return type.getAllMethods().stream()
                 .filter(GetterProperty::isGetter)
-                .map(GetterProperty::of)
-                .sorted();
+                .map(GetterProperty::of);
     }
 
     private static boolean isGetter(Method method) {
@@ -43,7 +41,7 @@ class GetterProperty implements Property {
     private final String typeName;
     @Getter @Accessors(fluent = true)
     private final String name;
-    protected final String valueExpression;
+    private final String valueExpression;
 
     @Override public String toString() {return "getter:" + name + "->" + typeName;}
 
@@ -56,14 +54,4 @@ class GetterProperty implements Property {
                     .append(valueExpression).append(", out);\n");
         }
     }
-
-    /**
-     * The primitive types that JsonGenerator supports directly; no null-check required.
-     * All other types are serialized via the context, which does the null-check.
-     */
-    private static final Set<String> PRIMITIVE_TYPES = Set.of(
-            "int",
-            "long",
-            "double",
-            "boolean");
 }
