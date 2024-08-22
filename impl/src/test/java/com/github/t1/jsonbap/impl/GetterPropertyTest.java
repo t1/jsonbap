@@ -4,6 +4,7 @@ import com.github.t1.exap.insight.Type;
 import org.junit.jupiter.api.Test;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
+import static com.github.t1.jsonbap.impl.GetterProperties.getterProperties;
 import static org.assertj.core.api.BDDAssertions.then;
 
 class GetterPropertyTest {
@@ -30,7 +31,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldFindRealGetter() {
-        var found = GetterProperty.getterProperties(type)
+        var found = getterProperties(type)
                 .filter(getter -> "description".equals(getter.name()))
                 .findAny();
 
@@ -39,7 +40,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldFindX() {
-        var found = GetterProperty.getterProperties(type)
+        var found = getterProperties(type)
                 .filter(getter -> "x".equals(getter.name()))
                 .findAny();
 
@@ -48,7 +49,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindStatic() {
-        var found = GetterProperty.getterProperties(type)
+        var found = getterProperties(type)
                 .filter(getter -> "static".equals(getter.name()))
                 .findAny();
 
@@ -57,7 +58,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindPrivate() {
-        var found = GetterProperty.getterProperties(type)
+        var found = getterProperties(type)
                 .filter(getter -> "private".equals(getter.name()))
                 .findAny();
 
@@ -66,7 +67,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindGet() {
-        var found = GetterProperty.getterProperties(type)
+        var found = getterProperties(type)
                 .filter(getter -> "get".equals(getter.name()))
                 .findAny();
 
@@ -75,7 +76,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindGetting() {
-        var found = GetterProperty.getterProperties(type)
+        var found = getterProperties(type)
                 .filter(getter -> "ting".equals(getter.name()))
                 .findAny();
 
@@ -84,7 +85,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindClassGetter() {
-        var found = GetterProperty.getterProperties(type)
+        var found = getterProperties(type)
                 .filter(getter -> "class".equals(getter.name()))
                 .findAny();
 
@@ -93,7 +94,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindVoid() {
-        var found = GetterProperty.getterProperties(type)
+        var found = getterProperties(type)
                 .filter(getter -> "nothing".equals(getter.name()))
                 .findAny();
 
@@ -102,7 +103,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindWithParam() {
-        var found = GetterProperty.getterProperties(type)
+        var found = getterProperties(type)
                 .filter(getter -> "withParam".equals(getter.name()))
                 .findAny();
 

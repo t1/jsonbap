@@ -9,12 +9,16 @@ import jakarta.json.bind.serializer.SerializationContext;
 import jakarta.json.stream.JsonGenerator;
 
 import javax.annotation.processing.Generated;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import static com.github.t1.exap.generator.Visibility.PUBLIC;
-import static com.github.t1.jsonbap.impl.FieldProperty.fieldProperties;
-import static com.github.t1.jsonbap.impl.GetterProperty.getterProperties;
-import static com.github.t1.jsonbap.impl.TypeProperty.typeProperty;
+import static com.github.t1.jsonbap.impl.FieldProperties.fieldProperties;
+import static com.github.t1.jsonbap.impl.GetterProperties.getterProperties;
+import static com.github.t1.jsonbap.impl.TypeProperties.typeProperties;
 
 class JsonbSerializerGenerator {
     private static Type type(Class<?> klass) {
@@ -53,14 +57,24 @@ class JsonbSerializerGenerator {
         return body.toString();
     }
 
-    private Stream<Property> properties() {
+    private List<Property> properties() {
         return Stream.concat(
-                Stream.concat(
-                        typeProperty(type).stream(),
-                        getterProperties(type)),
-                Stream.concat(
-                        Stream.empty(),
-                        fieldProperties(type)))
-                .sorted();
+                        Stream.concat(
+                                typeProperties(type),
+                                Stream.empty()), // just for symmetry
+                        Stream.concat(
+                                fieldProperties(type),
+                                getterProperties(type)))
+                .sorted()
+                .collect(propertiesMerger());
+    }
+
+    private Collector<Property, Map<String, Property>, List<Property>> propertiesMerger() {
+        return Collector.of(
+                LinkedHashMap::new,
+                (m, p) -> m.merge(p.name(), p, Property::merge),
+                (l, r) -> {l.putAll(r); return l;},
+                m -> List.copyOf(m.values())
+        );
     }
 }

@@ -336,12 +336,28 @@ abstract class JsonbIT extends AbstractJsonIT {
         private boolean hiddenPrivate;
     }
 
-    @Test void shouldSerializeField() throws Exception {
+    @Test void shouldSerializeFields() throws Exception {
         try (var jsonb = jsonb(PLAIN)) {
 
             var json = jsonb.toJson(PRODUCT);
 
             then(json).isEqualTo("{\"description\":\"foo\",\"id\":123}");
+        }
+    }
+
+    @Bindable
+    @SuppressWarnings("unused")
+    public static class PropertyVariations {
+        public String foo = "field";
+        public String getFoo() {return "getter";}
+    }
+
+    @Test void shouldSerializePropertyVariations() throws Exception {
+        try (var jsonb = jsonb(PLAIN)) {
+
+            var json = jsonb.toJson(new PropertyVariations());
+
+            then(json).isEqualTo("{\"foo\":\"getter\"}");
         }
     }
 }

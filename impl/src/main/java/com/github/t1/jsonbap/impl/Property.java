@@ -4,23 +4,26 @@ import lombok.NonNull;
 
 import java.util.Comparator;
 import java.util.Set;
+import java.util.function.Consumer;
 
-interface Property extends Comparable<Property> {
-    Comparator<Property> COMPARATOR = Comparator.comparing(Property::name);
+record Property(String name, Consumer<StringBuilder> writer) implements Comparable<Property> {
+    private static final Comparator<Property> COMPARATOR = Comparator.comparing(Property::name);
 
     /**
      * The primitive types that JsonGenerator supports directly; no null-check required.
      * All other types are serialized via the context, which does the null-check.
      */
-    Set<String> PRIMITIVE_TYPES = Set.of(
+    static final Set<String> PRIMITIVE_TYPES = Set.of(
             "int",
             "long",
             "double",
             "boolean");
 
-    String name();
+    @Override public int compareTo(@NonNull Property that) {return COMPARATOR.compare(this, that);}
 
-    @Override default int compareTo(@NonNull Property that) {return COMPARATOR.compare(this, that);}
+    public void write(StringBuilder out) {writer.accept(out);}
 
-    void write(StringBuilder out);
+    public Property merge(Property q) {
+        return q;
+    }
 }
