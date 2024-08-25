@@ -16,9 +16,9 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import static com.github.t1.exap.generator.Visibility.PUBLIC;
-import static com.github.t1.jsonbap.impl.FieldProperties.fieldProperties;
-import static com.github.t1.jsonbap.impl.GetterProperties.getterProperties;
-import static com.github.t1.jsonbap.impl.TypeProperties.typeProperties;
+import static com.github.t1.jsonbap.impl.FieldProperty.fieldProperties;
+import static com.github.t1.jsonbap.impl.GetterProperty.getterProperties;
+import static com.github.t1.jsonbap.impl.TypeProperty.typeProperties;
 
 class JsonbSerializerGenerator {
     private static Type type(Class<?> klass) {
@@ -46,18 +46,19 @@ class JsonbSerializerGenerator {
         toJson.addParameter("object").type(new TypeExpressionGenerator(typeGenerator, type));
         toJson.addParameter("out").type(new TypeExpressionGenerator(typeGenerator, type(JsonGenerator.class)));
         toJson.addParameter("context").type(new TypeExpressionGenerator(typeGenerator, type(SerializationContext.class)));
-        toJson.body(body());
+        toJson.body(body(typeGenerator));
     }
 
-    private String body() {
+    private String body(TypeGenerator typeGenerator) {
         var body = new StringBuilder();
         body.append("out.writeStartObject();\n");
-        properties().forEach(property -> property.write(body));
+        properties().forEach(property -> property.write(typeGenerator, body));
         body.append("        out.writeEnd();");
         return body.toString();
     }
 
     private List<Property> properties() {
+        // even before the sorting: the order of these property streams is relevant, as we merge only in one direction
         return Stream.concat(
                         Stream.concat(
                                 typeProperties(type),

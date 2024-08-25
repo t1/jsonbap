@@ -3,7 +3,9 @@ package com.github.t1.jsonbap.impl;
 import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.jsonbap.api.Bindable;
 import jakarta.json.bind.annotation.JsonbSubtype;
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -161,7 +163,7 @@ class JsonbSerializerGeneratorTest {
         var generator = new JsonbSerializerGenerator(type);
         var className = generator.className();
 
-        try (var typeGenerator = new TypeGenerator(log, type.getPackage(), className)) {
+        try (var typeGenerator = new TypeGenerator(ENV.round(), type.getPackage(), className)) {
             generator.generate(typeGenerator);
         }
     }

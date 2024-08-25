@@ -4,7 +4,7 @@ import com.github.t1.exap.insight.Type;
 import org.junit.jupiter.api.Test;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
-import static com.github.t1.jsonbap.impl.GetterProperties.getterProperties;
+import static com.github.t1.jsonbap.impl.GetterProperty.getterProperties;
 import static org.assertj.core.api.BDDAssertions.then;
 
 class GetterPropertyTest {
