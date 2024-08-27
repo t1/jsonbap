@@ -57,7 +57,7 @@ class JsonbSerializerGenerator {
         return body.toString();
     }
 
-    private List<Property> properties() {
+    private List<Property<?>> properties() {
         // even before the sorting: the order of these property streams is relevant, as we merge only in one direction
         return Stream.concat(
                         Stream.concat(
@@ -70,7 +70,7 @@ class JsonbSerializerGenerator {
                 .collect(propertiesMerger());
     }
 
-    private Collector<Property, Map<String, Property>, List<Property>> propertiesMerger() {
+    private Collector<Property<?>, Map<String, Property<?>>, List<Property<?>>> propertiesMerger() {
         return Collector.of(
                 LinkedHashMap::new,
                 (m, p) -> m.merge(p.name(), p, Property::merge),

@@ -9,8 +9,8 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import java.util.stream.Stream;
 
-class TypeProperty extends Property {
-    static Stream<Property> typeProperties(Type type) {
+class TypeProperty extends Property<Type> {
+    static Stream<Property<Type>> typeProperties(Type type) {
         return typeInfo(type).map(typeInfo -> new TypeProperty(type, typeInfo));
     }
 
@@ -23,9 +23,11 @@ class TypeProperty extends Property {
     private final AnnotationWrapper typeInfo;
 
     public TypeProperty(Type type, AnnotationWrapper typeInfo) {
-        super(typeInfo.getStringProperty("key"), type, type.annotations());
+        super(type, type.annotations());
         this.typeInfo = typeInfo;
     }
+
+    @Override public String name() {return typeInfo.getStringProperty("key");}
 
     @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
         var key = typeInfo.getStringProperty("key");
@@ -35,7 +37,7 @@ class TypeProperty extends Property {
                 .filter(value -> {
                     var type = value.getProperty("type", DeclaredType.class);
                     var typeName = ((TypeElement) type.asElement()).getQualifiedName().toString();
-                    return typeName.equals(((Type) elemental()).getFullName());
+                    return typeName.equals(elemental().getFullName());
                 })
                 .findAny()
                 .map(value -> value.getStringProperty("alias"))

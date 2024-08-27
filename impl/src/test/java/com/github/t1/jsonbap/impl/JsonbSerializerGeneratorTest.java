@@ -2,8 +2,8 @@ package com.github.t1.jsonbap.impl;
 
 import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.jsonbap.api.Bindable;
+import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.annotation.JsonbSubtype;
-import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -152,6 +152,7 @@ class JsonbSerializerGeneratorTest {
                             public void serialize(JsonbSerializerGeneratorTest$TransientContainer object, JsonGenerator out, SerializationContext context) {
                                 out.writeStartObject();
                                 context.serialize("normalField", object.normalField, out);
+                                // field TransientContainer#transientField is transient
                                 out.writeEnd();
                             }
                         }

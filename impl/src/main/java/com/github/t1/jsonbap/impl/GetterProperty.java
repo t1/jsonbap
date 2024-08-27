@@ -6,8 +6,8 @@ import com.github.t1.exap.insight.Type;
 
 import java.util.stream.Stream;
 
-class GetterProperty extends Property {
-    static Stream<Property> getterProperties(Type type) {
+class GetterProperty extends Property<Method> {
+    static Stream<Property<Method>> getterProperties(Type type) {
         return type.getAllMethods().stream()
                 .filter(GetterProperty::isGetter)
                 .map(GetterProperty::new);
@@ -23,22 +23,22 @@ class GetterProperty extends Property {
                && !"void".equals(method.getReturnType().getFullName());
     }
 
-    public GetterProperty(Method getter) {super(nameFrom(getter.name()), getter, getter.annotations());}
+    private final Method getter;
 
-    private static String nameFrom(String name) {
+    public GetterProperty(Method getter) {
+        super(getter, getter.annotations());
+        this.getter = getter;
+    }
+
+    @Override protected String rawName() {
+        var name = getter.name();
         return Character.toLowerCase(name.charAt(3)) + name.substring(4);
     }
 
     @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
-        var getter = (Method) elemental();
-        var typeName = getter.getReturnType().getFullName();
-        var valueExpression = "object." + getter.name() + "()";
-        if (PRIMITIVE_TYPES.contains(typeName)) {
-            out.append("        out.write(\"").append(name()).append("\", ")
-                    .append(valueExpression).append(");\n");
-        } else {
-            out.append("        context.serialize(\"").append(name()).append("\", ")
-                    .append(valueExpression).append(", out);\n");
-        }
+        write(
+                elemental().getReturnType().getFullName(),
+                "object." + getter.name() + "()",
+                out);
     }
 }

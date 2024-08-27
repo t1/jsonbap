@@ -7,26 +7,21 @@ import lombok.NonNull;
 
 import java.util.stream.Stream;
 
-class FieldProperty extends Property {
-    static Stream<Property> fieldProperties(Type type) {
+class FieldProperty extends Property<Field> {
+    static Stream<Property<Field>> fieldProperties(@NonNull Type type) {
         return type.getAllFields().stream()
                 .map(FieldProperty::new);
     }
 
     private final Field field;
 
-    FieldProperty(@NonNull Field field) {super(field);
-        this.field = field;
-    }
+    FieldProperty(@NonNull Field field) {super(field); this.field = field;}
 
     @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
-        if (!field.isPublic() || field.isTransient()) return;
-        if (PRIMITIVE_TYPES.contains(((Field) elemental()).getType().getSimpleName())) {
-            out.append("        out.write(\"").append(name()).append("\", ")
-                    .append("object.").append(name()).append(");\n");
+        if (field.isTransient()) {
+            writeComment(out, field + " is transient");
         } else {
-            out.append("        context.serialize(\"").append(name()).append("\", ")
-                    .append("object.").append(name()).append(", out);\n");
+            write(elemental().getType().getSimpleName(), "object." + rawName(), out);
         }
     }
 }
