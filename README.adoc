@@ -53,5 +53,5 @@ Careful: these benchmarks seem to be completely wrong.
 
 This is an annotation processor generating source code. This makes things fast, but brings things to look out for:
 
-* All classes that need to be (de)serialized have to be annotated as `@Bindable`, or (if it's not your source) be listed in the `value` of some `@Bindable` annotation.
-* Configurations in the JSON-B API, like the `jakarta.json.bind.config.PropertyNamingStrategy`, assume to be evaluated at runtime.
+* All classes that need to be (de)serialized have to be annotated as `@Bindable`, or (if it's not your own source) be listed in the `value` of some `@Bindable` annotation.
+* Configurations in the JSON-B API, like the `jakarta.json.bind.config.PropertyNamingStrategy`, assume to be evaluated at runtime. When generating the source code, this has not yet been specified. Instead, you can set the `propertyNamingStrategy` in the `@Bindable` annotation.

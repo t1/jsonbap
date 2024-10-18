@@ -13,13 +13,11 @@ class FieldProperty extends Property<Field> {
                 .map(FieldProperty::new);
     }
 
-    private final Field field;
-
-    FieldProperty(@NonNull Field field) {super(field); this.field = field;}
+    FieldProperty(@NonNull Field field) {super(field);}
 
     @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
-        if (field.isTransient()) {
-            writeComment(out, field + " is transient");
+        if (elemental.isTransient()) {
+            writeComment(out, elemental + " is transient");
         } else {
             write(elemental().getType().getSimpleName(), "object." + rawName(), out);
         }

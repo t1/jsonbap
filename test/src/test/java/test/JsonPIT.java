@@ -39,6 +39,11 @@ public class JsonPIT extends AbstractJsonIT {
             toJson(object.getAddress(), out);
             out.writeEnd();
         }
+        if (object.getFormerAddress() != null) {
+            out.writeStartObject("formerAddress");
+            toJson(object.getFormerAddress(), out);
+            out.writeEnd();
+        }
         out.write("age", object.getAge());
         out.write("averageScore", object.getAverageScore());
         if (object.getFirstName() != null) {

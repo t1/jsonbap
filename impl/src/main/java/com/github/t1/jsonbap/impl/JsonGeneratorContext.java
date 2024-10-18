@@ -2,7 +2,6 @@ package com.github.t1.jsonbap.impl;
 
 import com.github.t1.jsonbap.api.NullAwareSerializer;
 import jakarta.json.bind.JsonbConfig;
-import jakarta.json.bind.config.PropertyNamingStrategy;
 import jakarta.json.bind.serializer.SerializationContext;
 import jakarta.json.stream.JsonGenerator;
 
@@ -26,9 +25,11 @@ record JsonGeneratorContext(boolean writeNullValues) implements SerializationCon
             }
         } else {
             var serializer = ApJsonbProvider.serializerFor(object);
+            // TODO And can we merge that with the == null above... and with the other writeNull in the next method?
             //noinspection rawtypes,unchecked // it seems to be impossible to make this type-safe
             if (serializer instanceof NullAwareSerializer nullAware && nullAware.isNull(object)) {
                 if (writeNullValues) {
+                    // TODO something is wrong here: why write key _and_ null?
                     generator.writeKey(key);
                     generator.writeNull(key);
                 }

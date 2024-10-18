@@ -23,7 +23,7 @@ class TypeProperty extends Property<Type> {
     private final AnnotationWrapper typeInfo;
 
     public TypeProperty(Type type, AnnotationWrapper typeInfo) {
-        super(type, type.annotations());
+        super(type);
         this.typeInfo = typeInfo;
     }
 

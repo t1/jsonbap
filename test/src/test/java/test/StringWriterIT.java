@@ -42,6 +42,11 @@ public class StringWriterIT extends AbstractJsonIT {
             toJson(object.getAddress(), out);
             delim = ',';
         }
+        if (object.getFormerAddress() != null) {
+            out.append(delim).append("\"formerAddress\":");
+            toJson(object.getFormerAddress(), out);
+            delim = ',';
+        }
         out.append(delim).append("\"age\":").append(Integer.toString(object.getAge()));
         out.append(delim).append("\"averageScore\":").append(Double.toString(object.getAverageScore()));
         if (object.getFirstName() != null) {

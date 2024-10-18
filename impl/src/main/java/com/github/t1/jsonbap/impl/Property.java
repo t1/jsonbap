@@ -18,8 +18,8 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     private static final Comparator<Property<?>> COMPARATOR = Comparator.comparing(Property::name);
 
     /**
-     * The primitive types that JsonGenerator supports directly; no null-check required.
-     * All other types are serialized via the context, which does the null-check.
+     * The primitive types that {@link jakarta.json.stream.JsonGenerator} supports directly; no null-check required.
+     * All other types are serialized via the {@link JsonGeneratorContext}, which does the null-check.
      */
     static final Set<String> PRIMITIVE_TYPES = Set.of(
             "int",
@@ -27,10 +27,11 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             "double",
             "boolean");
 
-    private final @NonNull T elemental;
+    private final @NonNull PropertyConfig config;
+    protected final @NonNull T elemental;
     private final @NonNull ElementalAnnotations annotations;
 
-    public Property(@NonNull T elemental) {this(elemental, elemental.annotations());}
+    public Property(@NonNull T elemental) {this(new PropertyConfig(elemental), elemental, elemental.annotations());}
 
     @Override public String toString() {return getClass().getSimpleName() + " " + elemental();}
 
@@ -38,7 +39,21 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         return annotations.get(JsonbProperty.class)
                 .map(an -> an.getStringProperty("value"))
                 .flatMap(name -> name.isEmpty() ? Optional.empty() : Optional.of(name))
-                .orElseGet(this::rawName);
+                .orElseGet(this::derivedName);
+    }
+
+    private String derivedName() {
+        return switch (config.propertyNamingStrategy()) {
+            case IDENTITY, CASE_INSENSITIVE -> rawName();
+            case LOWER_CASE_WITH_DASHES -> rawName().replaceAll("([a-z])([A-Z])", "$1-$2").toLowerCase();
+            case LOWER_CASE_WITH_UNDERSCORES -> rawName().replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
+            case UPPER_CASE_WITH_UNDERSCORES -> rawName().replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
+            case UPPER_CAMEL_CASE -> rawName().substring(0, 1).toUpperCase() + rawName().substring(1);
+            case UPPER_CAMEL_CASE_WITH_SPACES -> {
+                var name = rawName().replaceAll("([a-z])([A-Z])", "$1 $2");
+                yield name.substring(0, 1).toUpperCase() + name.substring(1);
+            }
+        };
     }
 
     protected String rawName() {return elemental().name();}
@@ -83,7 +98,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     }
 
     private Property<T> withAnnotations(ElementalAnnotations annotations) {
-        return new Property<>(this.elemental, this.annotations.merge(annotations)) {
+        return new Property<>(this.config, this.elemental, this.annotations.merge(annotations)) {
             @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
                 Property.this.writeTo(typeGenerator, out);
             }

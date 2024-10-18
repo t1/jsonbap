@@ -23,22 +23,17 @@ class GetterProperty extends Property<Method> {
                && !"void".equals(method.getReturnType().getFullName());
     }
 
-    private final Method getter;
-
-    public GetterProperty(Method getter) {
-        super(getter, getter.annotations());
-        this.getter = getter;
-    }
+    private GetterProperty(Method getter) {super(getter);}
 
     @Override protected String rawName() {
-        var name = getter.name();
+        var name = elemental.name();
         return Character.toLowerCase(name.charAt(3)) + name.substring(4);
     }
 
     @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
         write(
                 elemental().getReturnType().getFullName(),
-                "object." + getter.name() + "()",
+                "object." + elemental.name() + "()",
                 out);
     }
 }

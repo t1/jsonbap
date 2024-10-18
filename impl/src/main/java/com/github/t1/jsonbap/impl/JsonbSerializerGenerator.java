@@ -73,9 +73,13 @@ class JsonbSerializerGenerator {
     private Collector<Property<?>, Map<String, Property<?>>, List<Property<?>>> propertiesMerger() {
         return Collector.of(
                 LinkedHashMap::new,
-                (m, p) -> m.merge(p.name(), p, Property::merge),
+                (m, p) -> m.merge(p.name(), p, this::merge),
                 (l, r) -> {l.putAll(r); return l;},
                 m -> List.copyOf(m.values())
         );
     }
+
+    // we need this indirection to work around the type wildcards
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Property<?> merge(Property<?> property, Property<?> that) {return property.merge((Property) that);}
 }
