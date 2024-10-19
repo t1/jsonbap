@@ -8,12 +8,7 @@ import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.api.Bindable;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.annotation.processing.SupportedSourceVersion;
-
-import static javax.lang.model.SourceVersion.RELEASE_17;
-
 @Slf4j
-@SupportedSourceVersion(RELEASE_17)
 @SupportedAnnotationClasses({Bindable.class})
 public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
     @Override public boolean process(Round round) {
