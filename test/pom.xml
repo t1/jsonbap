@@ -32,7 +32,7 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
-            <scope>test</scope>
+            <!--also during compile, so not <scope>test</scope>-->
         </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>

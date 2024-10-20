@@ -4,9 +4,11 @@ import com.github.t1.exap.generator.TypeExpressionGenerator;
 import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.Type;
 import com.github.t1.exap.reflection.ReflectionProcessingEnvironment;
+import com.github.t1.jsonbap.api.Bindable;
 import jakarta.json.bind.serializer.JsonbSerializer;
 import jakarta.json.bind.serializer.SerializationContext;
 import jakarta.json.stream.JsonGenerator;
+import lombok.AllArgsConstructor;
 
 import javax.annotation.processing.Generated;
 import java.util.LinkedHashMap;
@@ -20,15 +22,17 @@ import static com.github.t1.jsonbap.impl.FieldProperty.fieldProperties;
 import static com.github.t1.jsonbap.impl.GetterProperty.getterProperties;
 import static com.github.t1.jsonbap.impl.TypeProperty.typeProperties;
 
+@AllArgsConstructor
 class JsonbSerializerGenerator {
     private static Type type(Class<?> klass) {
         return ReflectionProcessingEnvironment.ENV.type(klass);
     }
 
     private final Type type;
+    private final TypeConfig config;
 
     public JsonbSerializerGenerator(Type type) {
-        this.type = type;
+        this(type, new TypeConfig(type.annotation(Bindable.class)));
     }
 
     public String className() {
@@ -61,11 +65,11 @@ class JsonbSerializerGenerator {
         // even before the sorting: the order of these property streams is relevant, as we merge only in one direction
         return Stream.concat(
                         Stream.concat(
-                                typeProperties(type),
+                                typeProperties(config, type),
                                 Stream.empty()), // just for symmetry
                         Stream.concat(
-                                fieldProperties(type),
-                                getterProperties(type)))
+                                fieldProperties(config, type),
+                                getterProperties(config, type)))
                 .sorted()
                 .collect(propertiesMerger());
     }
@@ -74,7 +78,10 @@ class JsonbSerializerGenerator {
         return Collector.of(
                 LinkedHashMap::new,
                 (m, p) -> m.merge(p.name(), p, this::merge),
-                (l, r) -> {l.putAll(r); return l;},
+                (l, r) -> {
+                    l.putAll(r);
+                    return l;
+                },
                 m -> List.copyOf(m.values())
         );
     }

@@ -8,16 +8,18 @@ import lombok.NonNull;
 import java.util.stream.Stream;
 
 class FieldProperty extends Property<Field> {
-    static Stream<Property<Field>> fieldProperties(@NonNull Type type) {
+    static Stream<Property<Field>> fieldProperties(@NonNull TypeConfig config, @NonNull Type type) {
         return type.getAllFields().stream()
-                .map(FieldProperty::new);
+                .map(field -> new FieldProperty(config, field));
     }
 
-    FieldProperty(@NonNull Field field) {super(field);}
+    FieldProperty(@NonNull TypeConfig config, @NonNull Field field) {super(config, field);}
+
+    @Override public String toString() {return "field " + elemental.name();}
 
     @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
         if (elemental.isTransient()) {
-            writeComment(out, elemental + " is transient");
+            writeComment(out, this + " is transient");
         } else {
             write(elemental().getType().getSimpleName(), "object." + rawName(), out);
         }

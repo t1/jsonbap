@@ -8,8 +8,8 @@ import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.api.Bindable;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @SupportedAnnotationClasses({Bindable.class})
+@Slf4j
 public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
     @Override public boolean process(Round round) {
         round.typesAnnotatedWith(Bindable.class).forEach(this::process);
@@ -22,14 +22,14 @@ public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
             generateSerializerFor(type);
         }
 
-        bindable.stream()
-                .flatMap(b -> b.getTypeProperties("value").stream())
-                .forEach(this::process);
+        bindable.ifPresent(bindable_ -> bindable_.getTypeProperties("value")
+                .forEach(this::process));
     }
 
     private static void generateSerializerFor(Type type) {
         var generator = new JsonbSerializerGenerator(type);
-        type.warning("generate " + generator.className());
+        log.info("generate {}", generator.className());
+        type.warning("generate " + generator.className()); // TODO use note
         try (var typeGenerator = type.getPackage().openTypeGenerator(generator.className())) {
             generator.generate(typeGenerator);
         } catch (SourceAlreadyExistsException e) {

@@ -9,23 +9,33 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import java.util.stream.Stream;
 
+/// the `type` property for polymorphic (de)serialization; by default named `@type`.
+///
+/// @see jakarta.json.bind.annotation.JsonbTypeInfo
 class TypeProperty extends Property<Type> {
-    static Stream<Property<Type>> typeProperties(Type type) {
-        return typeInfo(type).map(typeInfo -> new TypeProperty(type, typeInfo));
+    static Stream<Property<Type>> typeProperties(TypeConfig config, Type type) {
+        return typeInfo(type).map(typeInfo -> new TypeProperty(config, type, typeInfo));
     }
 
     private static Stream<AnnotationWrapper> typeInfo(Type type) {
         return type.allInterfaces()
                 .flatMap(Elemental::annotationWrappers)
-                .filter(annotationWrapper -> annotationWrapper.getAnnotationType().getFullName().equals("jakarta.json.bind.annotation.JsonbTypeInfo"));
+                .filter(TypeProperty::isJsonbTypeInfo);
     }
+
+    private static boolean isJsonbTypeInfo(AnnotationWrapper annotationWrapper) {
+        return annotationWrapper.getAnnotationType().getFullName().equals("jakarta.json.bind.annotation.JsonbTypeInfo");
+    }
+
 
     private final AnnotationWrapper typeInfo;
 
-    public TypeProperty(Type type, AnnotationWrapper typeInfo) {
-        super(type);
+    public TypeProperty(TypeConfig config, Type type, AnnotationWrapper typeInfo) {
+        super(config, type);
         this.typeInfo = typeInfo;
     }
+
+    @Override public String toString() {return "type " + elemental.name();}
 
     @Override public String name() {return typeInfo.getStringProperty("key");}
 

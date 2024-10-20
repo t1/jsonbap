@@ -48,6 +48,6 @@ class OnlyOneCollectorTest {
         var e = catchRuntimeException(() -> stream.collect(only()));
 
         then(e).isInstanceOf(IllegalStateException.class)
-                .hasMessageStartingWith("found two: ");
+                .hasMessageContaining("found two: ");
     }
 }

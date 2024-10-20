@@ -7,10 +7,10 @@ import com.github.t1.exap.insight.Type;
 import java.util.stream.Stream;
 
 class GetterProperty extends Property<Method> {
-    static Stream<Property<Method>> getterProperties(Type type) {
+    static Stream<Property<Method>> getterProperties(TypeConfig config, Type type) {
         return type.getAllMethods().stream()
                 .filter(GetterProperty::isGetter)
-                .map(GetterProperty::new);
+                .map(method -> new GetterProperty(config, method));
     }
 
     private static boolean isGetter(Method method) {
@@ -23,7 +23,9 @@ class GetterProperty extends Property<Method> {
                && !"void".equals(method.getReturnType().getFullName());
     }
 
-    private GetterProperty(Method getter) {super(getter);}
+    private GetterProperty(TypeConfig config, Method getter) {super(config, getter);}
+
+    @Override public String toString() {return "getter " + elemental.name();}
 
     @Override protected String rawName() {
         var name = elemental.name();

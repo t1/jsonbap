@@ -43,7 +43,7 @@ class JsonbSerializerGeneratorTest {
                         package com.github.t1.jsonbap.impl;
                         
                         import javax.annotation.processing.Generated;
-
+                        
                         import jakarta.json.bind.serializer.JsonbSerializer;
                         import jakarta.json.bind.serializer.SerializationContext;
                         import jakarta.json.stream.JsonGenerator;
@@ -152,7 +152,7 @@ class JsonbSerializerGeneratorTest {
                             public void serialize(JsonbSerializerGeneratorTest$TransientContainer object, JsonGenerator out, SerializationContext context) {
                                 out.writeStartObject();
                                 context.serialize("normalField", object.normalField, out);
-                                // field TransientContainer#transientField is transient
+                                // field transientField is transient
                                 out.writeEnd();
                             }
                         }
@@ -161,7 +161,11 @@ class JsonbSerializerGeneratorTest {
 
     private static void generate(Class<?> serializableClass) {
         var type = ENV.type(serializableClass);
-        var generator = new JsonbSerializerGenerator(type);
+        generate(type, type.annotation(Bindable.class));
+    }
+
+    private static void generate(Type type, Optional<Bindable> bindable) {
+        var generator = new JsonbSerializerGenerator(type, new TypeConfig(bindable));
         var className = generator.className();
 
         try (var typeGenerator = new TypeGenerator(ENV.round(), type.getPackage(), className)) {

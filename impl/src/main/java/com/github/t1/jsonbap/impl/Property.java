@@ -27,33 +27,39 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             "double",
             "boolean");
 
-    private final @NonNull PropertyConfig config;
+    private final @NonNull TypeConfig config;
     protected final @NonNull T elemental;
     private final @NonNull ElementalAnnotations annotations;
 
-    public Property(@NonNull T elemental) {this(new PropertyConfig(elemental), elemental, elemental.annotations());}
+    public Property(TypeConfig config, T elemental) {this(config, elemental, elemental.annotations());}
 
-    @Override public String toString() {return getClass().getSimpleName() + " " + elemental();}
+    @Override public abstract String toString(); // subclasses MUST implement this
 
     public String name() {
-        return annotations.get(JsonbProperty.class)
-                .map(an -> an.getStringProperty("value"))
-                .flatMap(name -> name.isEmpty() ? Optional.empty() : Optional.of(name))
-                .orElseGet(this::derivedName);
+        return annotatedName()
+                .or(this::derivedName)
+                .orElseGet(this::rawName);
     }
 
-    private String derivedName() {
-        return switch (config.propertyNamingStrategy()) {
-            case IDENTITY, CASE_INSENSITIVE -> rawName();
-            case LOWER_CASE_WITH_DASHES -> rawName().replaceAll("([a-z])([A-Z])", "$1-$2").toLowerCase();
-            case LOWER_CASE_WITH_UNDERSCORES -> rawName().replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
-            case UPPER_CASE_WITH_UNDERSCORES -> rawName().replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
-            case UPPER_CAMEL_CASE -> rawName().substring(0, 1).toUpperCase() + rawName().substring(1);
+    private Optional<String> annotatedName() {
+        return annotations.get(JsonbProperty.class)
+                .map(an -> an.getStringProperty("value"))
+                .flatMap(name -> name.isEmpty() ? Optional.empty() : Optional.of(name));
+    }
+
+    private Optional<String> derivedName() {
+        var raw = rawName();
+        return Optional.ofNullable(switch (config.propertyNamingStrategy()) {
+            case IDENTITY, CASE_INSENSITIVE -> null;
+            case LOWER_CASE_WITH_DASHES -> raw.replaceAll("([a-z])([A-Z])", "$1-$2").toLowerCase();
+            case LOWER_CASE_WITH_UNDERSCORES -> raw.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
+            case UPPER_CASE_WITH_UNDERSCORES -> raw.replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
+            case UPPER_CAMEL_CASE -> raw.substring(0, 1).toUpperCase() + raw.substring(1);
             case UPPER_CAMEL_CASE_WITH_SPACES -> {
-                var name = rawName().replaceAll("([a-z])([A-Z])", "$1 $2");
+                var name = raw.replaceAll("([a-z])([A-Z])", "$1 $2");
                 yield name.substring(0, 1).toUpperCase() + name.substring(1);
             }
-        };
+        });
     }
 
     protected String rawName() {return elemental().name();}
@@ -65,7 +71,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     boolean isJsonbProperty() {return annotations.contains(JsonbProperty.class);}
 
     protected void writeJsonbException(TypeGenerator typeGenerator, StringBuilder out, String message) {
-        elemental.warning(message);
+        elemental.warning(message); // TODO this should normally be an error, but that would break the TCK build. Make it configurable?
         typeGenerator.addImport("jakarta.json.bind.JsonbException");
         // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
         out.append("        if (true) throw new JsonbException(\"").append(message.replace("\"", "\\\"")).append("\");\n");
@@ -81,10 +87,10 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                 writeJsonbException(typeGenerator, out,
                         "don't annotate something as JsonbProperty that you also annotated as JsonbTransient");
             } else {
-                writeComment(out, elemental + " is annotated as JsonbTransient");
+                writeComment(out, this + " is annotated as JsonbTransient");
             }
         } else if (!elemental.isPublic()) {
-            writeComment(out, elemental + " is not public");
+            writeComment(out, this + " is not public");
         } else {
             writeTo(typeGenerator, out);
         }
@@ -102,6 +108,8 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
                 Property.this.writeTo(typeGenerator, out);
             }
+
+            @Override public String toString() {return Property.this.toString();}
         };
     }
 
@@ -111,11 +119,21 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
      * of the {@link SerializationContext context}, which may, or may not, write a <code>null</code> value.
      */
     protected void write(String typeName, String valueExpression, StringBuilder out) {
+        String name;
+        if (annotatedName().isPresent()) {
+            writeComment(out, "name from JsonbProperty annotation");
+            name = annotatedName().get();
+        } else if (derivedName().isPresent()) {
+            writeComment(out, "name derived from \"" + rawName() + "\" with strategy " + config.propertyNamingStrategy());
+            name = derivedName().get();
+        } else {
+            name = rawName();
+        }
         if (PRIMITIVE_TYPES.contains(typeName)) {
-            out.append("        out.write(\"").append(name()).append("\", ")
+            out.append("        out.write(\"").append(name).append("\", ")
                     .append(valueExpression).append(");\n");
         } else {
-            out.append("        context.serialize(\"").append(name()).append("\", ")
+            out.append("        context.serialize(\"").append(name).append("\", ")
                     .append(valueExpression).append(", out);\n");
         }
     }
