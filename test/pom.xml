@@ -10,13 +10,30 @@
 
     <artifactId>jsonbap.test</artifactId>
 
+    <properties>
+        <maven.install.skip>true</maven.install.skip>
+    </properties>
+
     <dependencies>
+        <dependency>
+            <groupId>com.github.t1</groupId>
+            <artifactId>jsonbap.api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.t1</groupId>
+            <artifactId>jsonbap.impl</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
+            <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
@@ -28,11 +45,6 @@
             <artifactId>jmh-generator-annprocess</artifactId>
             <version>${jmh.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.t1</groupId>
-            <artifactId>jsonbap.impl</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse</groupId>
