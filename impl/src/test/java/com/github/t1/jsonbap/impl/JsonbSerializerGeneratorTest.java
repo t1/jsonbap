@@ -1,20 +1,19 @@
 package com.github.t1.jsonbap.impl;
 
 import com.github.t1.exap.generator.TypeGenerator;
+import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.api.Bindable;
-import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
 import static javax.tools.StandardLocation.SOURCE_OUTPUT;
 import static org.assertj.core.api.BDDAssertions.then;
 
-@Slf4j
 class JsonbSerializerGeneratorTest {
     @JsonbTypeInfo({
             @JsonbSubtype(alias = "cat", type = Cat.class),

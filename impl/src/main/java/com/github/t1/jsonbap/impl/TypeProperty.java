@@ -3,7 +3,9 @@ package com.github.t1.jsonbap.impl;
 import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.AnnotationWrapper;
 import com.github.t1.exap.insight.Elemental;
+import com.github.t1.exap.insight.ElementalAnnotations;
 import com.github.t1.exap.insight.Type;
+import lombok.NonNull;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -14,7 +16,7 @@ import java.util.stream.Stream;
 /// @see jakarta.json.bind.annotation.JsonbTypeInfo
 class TypeProperty extends Property<Type> {
     static Stream<Property<Type>> typeProperties(TypeConfig config, Type type) {
-        return typeInfo(type).map(typeInfo -> new TypeProperty(config, type, typeInfo));
+        return typeInfo(type).map(typeInfo -> new TypeProperty(config, type, type.annotations(), typeInfo));
     }
 
     private static Stream<AnnotationWrapper> typeInfo(Type type) {
@@ -30,14 +32,23 @@ class TypeProperty extends Property<Type> {
 
     private final AnnotationWrapper typeInfo;
 
-    public TypeProperty(TypeConfig config, Type type, AnnotationWrapper typeInfo) {
-        super(config, type);
+    public TypeProperty(TypeConfig config, Type type, ElementalAnnotations annotations, AnnotationWrapper typeInfo) {
+        super(config, type, annotations);
         this.typeInfo = typeInfo;
+    }
+
+    @Override protected Property<?> withAnnotations(@NonNull ElementalAnnotations annotations) {
+        return new TypeProperty(this.config, this.elemental, annotations, this.typeInfo);
     }
 
     @Override public String toString() {return "type " + elemental.name();}
 
     @Override public String name() {return typeInfo.getStringProperty("key");}
+
+    @Override protected <T extends Property<?>> Either<T, String> or(T that) {
+        return Either.or("the type property " + name() + " specified via the `@JsonbTypeInfo` annotation " +
+                         "must not also be defined as a field or getter");
+    }
 
     @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
         var key = typeInfo.getStringProperty("key");

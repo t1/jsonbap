@@ -13,7 +13,9 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.Set;
 
-@RequiredArgsConstructor
+import static lombok.AccessLevel.PROTECTED;
+
+@RequiredArgsConstructor(access = PROTECTED)
 abstract class Property<T extends Elemental> implements Comparable<Property<?>> {
     private static final Comparator<Property<?>> COMPARATOR = Comparator.comparing(Property::name);
 
@@ -27,11 +29,9 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             "double",
             "boolean");
 
-    private final @NonNull TypeConfig config;
+    protected final @NonNull TypeConfig config;
     protected final @NonNull T elemental;
     private final @NonNull ElementalAnnotations annotations;
-
-    public Property(TypeConfig config, T elemental) {this(config, elemental, elemental.annotations());}
 
     @Override public abstract String toString(); // subclasses MUST implement this
 
@@ -66,20 +66,38 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     public @NonNull T elemental() {return elemental;}
 
+    boolean isPublic() {return elemental().isPublic();}
+
     boolean isJsonbTransient() {return annotations.contains(JsonbTransient.class);}
 
     boolean isJsonbProperty() {return annotations.contains(JsonbProperty.class);}
 
-    protected void writeJsonbException(TypeGenerator typeGenerator, StringBuilder out, String message) {
-        elemental.warning(message); // TODO this should normally be an error, but that would break the TCK build. Make it configurable?
-        typeGenerator.addImport("jakarta.json.bind.JsonbException");
-        // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
-        out.append("        if (true) throw new JsonbException(\"").append(message.replace("\"", "\\\"")).append("\");\n");
+    @Override public int compareTo(@NonNull Property that) {return COMPARATOR.compare(this, that);}
+
+    public Property<?> merge(Property<?> that) {
+        elemental.note("merge " + this + " and " + that);
+        var optionalBase = this.or(that);
+        if (optionalBase.isOr()) return null;
+        var base = optionalBase.get();
+        var other = (base == this) ? that : this;
+        if (!base.isJsonbProperty() && other.isJsonbProperty()) {
+            base = base.withAnnotations(other.annotations);
+        }
+        return base;
     }
 
-    protected void writeComment(StringBuilder out, String message) {out.append("        // ").append(message).append("\n");}
+    protected abstract Property<?> withAnnotations(@NonNull ElementalAnnotations annotations);
 
-    @Override public int compareTo(@NonNull Property that) {return COMPARATOR.compare(this, that);}
+    /// The algorithm is described [here](https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0#scope-and-field-access-strategy).
+    ///
+    /// For a serialization operation, if a matching public getter method exists,
+    /// the method is called to obtain the value of the property.
+    /// If a matching getter method with private, protected, or defaulted to package-only access exists,
+    /// then this field is ignored.
+    /// If no matching getter method exists and the field is public,
+    /// then the value is obtained directly from the field.
+    protected abstract <V extends Property<?>> Either<V, String> or(V that);
+
 
     final void write(TypeGenerator typeGenerator, StringBuilder out) {
         if (isJsonbTransient()) {
@@ -96,22 +114,16 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         }
     }
 
+    protected void writeJsonbException(TypeGenerator typeGenerator, StringBuilder out, String message) {
+        elemental.warning(message); // TODO this should normally be an error, but that would break the TCK build. Make it configurable?
+        typeGenerator.addImport("jakarta.json.bind.JsonbException");
+        // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
+        out.append("        if (true) throw new JsonbException(\"").append(message.replace("\"", "\\\"")).append("\");\n");
+    }
+
+    protected void writeComment(StringBuilder out, String message) {out.append("        // ").append(message).append("\n");}
+
     protected abstract void writeTo(TypeGenerator typeGenerator, StringBuilder out);
-
-    public Property<T> merge(Property<T> that) {
-        elemental.note("merge " + this + " into " + that);
-        return that.withAnnotations(this.annotations);
-    }
-
-    private Property<T> withAnnotations(ElementalAnnotations annotations) {
-        return new Property<>(this.config, this.elemental, this.annotations.merge(annotations)) {
-            @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
-                Property.this.writeTo(typeGenerator, out);
-            }
-
-            @Override public String toString() {return Property.this.toString();}
-        };
-    }
 
     /**
      * Append the code required to serialize a JSON key-value pair, either a primitive and non-nullable type directly

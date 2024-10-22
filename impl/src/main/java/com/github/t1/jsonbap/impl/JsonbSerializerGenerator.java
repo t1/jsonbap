@@ -62,7 +62,6 @@ class JsonbSerializerGenerator {
     }
 
     private List<Property<?>> properties() {
-        // even before the sorting: the order of these property streams is relevant, as we merge only in one direction
         return Stream.concat(
                         Stream.concat(
                                 typeProperties(config, type),
@@ -77,16 +76,12 @@ class JsonbSerializerGenerator {
     private Collector<Property<?>, Map<String, Property<?>>, List<Property<?>>> propertiesMerger() {
         return Collector.of(
                 LinkedHashMap::new,
-                (m, p) -> m.merge(p.name(), p, this::merge),
+                (m, p) -> m.merge(p.rawName(), p, Property::merge),
                 (l, r) -> {
                     l.putAll(r);
                     return l;
                 },
-                m -> List.copyOf(m.values())
+                m -> m.values().stream().toList()
         );
     }
-
-    // we need this indirection to work around the type wildcards
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private Property<?> merge(Property<?> property, Property<?> that) {return property.merge((Property) that);}
 }
