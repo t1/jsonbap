@@ -77,6 +77,7 @@ import com.github.t1.jsonbap.api.Bindable;
         ee.jakarta.tck.json.bind.defaultmapping.classes.model.StringContainerPublicAccessorsPublicField.class,
         ee.jakarta.tck.json.bind.defaultmapping.classes.model.StringContainerPublicConstructor.class,
         ee.jakarta.tck.json.bind.defaultmapping.classes.model.StringContainerPublicStaticNestedClass.class,
+        ee.jakarta.tck.json.bind.defaultmapping.classes.model.StringContainerPublicStaticNestedClass.NestedClass.class,
         ee.jakarta.tck.json.bind.defaultmapping.classes.model.StringContainerStaticField.class,
         ee.jakarta.tck.json.bind.defaultmapping.classes.model.StringContainerTransientField.class,
         ee.jakarta.tck.json.bind.defaultmapping.dates.model.CalendarContainer.class,
