@@ -1,6 +1,5 @@
 package com.github.t1.jsonbap.impl;
 
-import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.AnnotationWrapper;
 import com.github.t1.exap.insight.Elemental;
 import com.github.t1.exap.insight.ElementalAnnotations;
@@ -41,18 +40,21 @@ class TypeProperty extends Property<Type> {
         return new TypeProperty(this.config, this.elemental, annotations, this.typeInfo);
     }
 
-    @Override public String toString() {return "type " + elemental.name();}
+    @Override protected String propertyType() {return "type";}
 
-    @Override public String name() {return typeInfo.getStringProperty("key");}
+    @Override public String name() {
+        var key = typeInfo.getStringProperty("key");
+        return (key == null) ? "@type" : key;
+    }
 
     @Override protected <T extends Property<?>> Either<T, String> or(T that) {
         return Either.or("the type property " + name() + " specified via the `@JsonbTypeInfo` annotation " +
                          "must not also be defined as a field or getter");
     }
 
-    @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
-        var key = typeInfo.getStringProperty("key");
-        if (key == null) key = "@type";
+    @Override protected String typeName() {return "String";}
+
+    @Override protected String valueExpression() {
         var list = typeInfo.getAnnotationProperties("value");
         var alias = list.stream()
                 .filter(value -> {
@@ -63,8 +65,6 @@ class TypeProperty extends Property<Type> {
                 .findAny()
                 .map(value -> value.getStringProperty("alias"))
                 .orElseThrow();
-        out.append("        out.write(")
-                .append("\"").append(key).append("\", ")
-                .append("\"").append(alias).append("\");\n");
+        return '"' + alias + '"';
     }
 }

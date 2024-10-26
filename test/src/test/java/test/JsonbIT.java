@@ -24,8 +24,8 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.BDDAssertions.then;
 import static test.JsonbIT.Product.PRODUCT;
-import static test.JsonbIT.TestConfig.FORMATTED;
-import static test.JsonbIT.TestConfig.FORMATTED_AND_NULL_VALUES;
+import static test.JsonbIT.TestConfig.FORMATTING;
+import static test.JsonbIT.TestConfig.FORMATTING_AND_NULL_VALUES;
 import static test.JsonbIT.TestConfig.PLAIN;
 
 abstract class JsonbIT extends AbstractJsonIT {
@@ -35,20 +35,20 @@ abstract class JsonbIT extends AbstractJsonIT {
                 .withProvider(testConfig.toJsonpConfig());
     }
 
-    protected record TestConfig(boolean formatted, boolean nullValues, boolean jsonpProvider) {
+    protected record TestConfig(boolean formatting, boolean nullValues, boolean jsonpProvider) {
         static final TestConfig PLAIN = new TestConfig(false, false, false);
-        static final TestConfig FORMATTED = new TestConfig(true, false, false);
+        static final TestConfig FORMATTING = new TestConfig(true, false, false);
         static final TestConfig NULL_VALUES = new TestConfig(false, true, false);
-        static final TestConfig FORMATTED_AND_NULL_VALUES = new TestConfig(true, true, false);
+        static final TestConfig FORMATTING_AND_NULL_VALUES = new TestConfig(true, true, false);
 
         public static Stream<TestConfig> stream() {
-            return Stream.of(PLAIN, FORMATTED, NULL_VALUES, FORMATTED_AND_NULL_VALUES);
+            return Stream.of(PLAIN, FORMATTING, NULL_VALUES, FORMATTING_AND_NULL_VALUES);
         }
 
         public JsonProvider toJsonpConfig() {return jsonpProvider ? JsonProvider.provider() : null;}
 
         public JsonbConfig toJsonbConfig() {
-            return new JsonbConfig().withFormatting(formatted).withNullValues(nullValues);
+            return new JsonbConfig().withFormatting(formatting).withNullValues(nullValues);
         }
     }
 
@@ -66,22 +66,22 @@ abstract class JsonbIT extends AbstractJsonIT {
 
     protected abstract Jsonb jsonb(TestConfig testConfig);
 
-    protected Jsonb jsonb() {return jsonb(FORMATTED_AND_NULL_VALUES);}
+    protected Jsonb jsonb() {return jsonb(FORMATTING_AND_NULL_VALUES);}
 
-    @Test void shouldSerializeFormatted() {
-        var json = toJson(DATA, FORMATTED);
+    @Test void shouldSerializeFormatting() {
+        var json = toJson(DATA, FORMATTING);
 
         then(json).isEqualTo(prettyPrint(repeatedJson(false)));
     }
 
     @Test void shouldSerializeNullValues() {
-        var json = toJson(DATA, FORMATTED_AND_NULL_VALUES);
+        var json = toJson(DATA, FORMATTING_AND_NULL_VALUES);
 
         then(json).isEqualTo(prettyPrint(repeatedJson(true)));
     }
 
-    @Test void shouldSerializeFormattedNullValues() {
-        var json = toJson(DATA, FORMATTED_AND_NULL_VALUES);
+    @Test void shouldSerializeFormattingNullValues() {
+        var json = toJson(DATA, FORMATTING_AND_NULL_VALUES);
 
         then(json).isEqualTo(prettyPrint(repeatedJson(true)));
     }
@@ -251,7 +251,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     }
 
     @Test void shouldSerializeListWithNullNoNullValues() throws Exception {
-        try (var jsonb = jsonb(FORMATTED)) {
+        try (var jsonb = jsonb(FORMATTING)) {
 
             var people = new java.util.ArrayList<Address>();
             people.add(address(0));
@@ -349,6 +349,7 @@ abstract class JsonbIT extends AbstractJsonIT {
     @SuppressWarnings("unused")
     public static class PropertyVariations {
         public String foo = "field";
+
         public String getFoo() {return "getter";}
     }
 
@@ -358,6 +359,23 @@ abstract class JsonbIT extends AbstractJsonIT {
             var json = jsonb.toJson(new PropertyVariations());
 
             then(json).isEqualTo("{\"foo\":\"getter\"}");
+        }
+    }
+
+    @Test void shouldSerializeNullFormattedNumber() throws Exception {
+        try (var jsonb = jsonb(PLAIN)) {
+
+            var json = jsonb.toJson(person(1).withAddress(null).withPets(null)
+                    .withIncome(null));
+
+            then(json).isEqualTo("{" +
+                                 "\"age\":13," +
+                                 "\"averageScore\":0.123," +
+                                 "\"firstName\":\"Jane-1\"," +
+                                 "\"lastName\":\"Doe-1\"," +
+                                 "\"member\":false," +
+                                 "\"registrationTimestamp\":10000000001," +
+                                 "\"roles\":[\"role-1\",\"role-...\",\"role-1\"]}");
         }
     }
 }

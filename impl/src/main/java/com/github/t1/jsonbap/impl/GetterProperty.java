@@ -1,6 +1,5 @@
 package com.github.t1.jsonbap.impl;
 
-import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.ElementalAnnotations;
 import com.github.t1.exap.insight.Method;
 import com.github.t1.exap.insight.Type;
@@ -31,7 +30,7 @@ class GetterProperty extends Property<Method> {
         return new GetterProperty(this.config, this.elemental, annotations);
     }
 
-    @Override public String toString() {return "getter " + rawName();}
+    @Override protected String propertyType() {return "getter";}
 
     @Override protected String rawName() {
         var name = elemental.name();
@@ -44,10 +43,7 @@ class GetterProperty extends Property<Method> {
         return Either.<T, String>value((T) this).with(Property::isPublic, that);
     }
 
-    @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
-        write(
-                elemental().getReturnType().getFullName(),
-                "object." + elemental.name() + "()",
-                out);
-    }
+    @Override protected String typeName() {return elemental().getReturnType().getFullName();}
+
+    @Override protected String valueExpression() {return "object." + elemental.name() + "()";}
 }

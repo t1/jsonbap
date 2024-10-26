@@ -1,15 +1,19 @@
 package com.github.t1.jsonbap.impl;
 
 import com.github.t1.exap.generator.TypeGenerator;
+import com.github.t1.exap.insight.AnnotationWrapper;
 import com.github.t1.exap.insight.Elemental;
 import com.github.t1.exap.insight.ElementalAnnotations;
+import jakarta.json.bind.annotation.JsonbNumberFormat;
 import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.json.bind.serializer.SerializationContext;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+import java.text.NumberFormat;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
@@ -29,11 +33,25 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             "double",
             "boolean");
 
-    protected final @NonNull TypeConfig config;
-    protected final @NonNull T elemental;
-    private final @NonNull ElementalAnnotations annotations;
+    protected final TypeConfig config;
+    protected final T elemental;
+    private final ElementalAnnotations annotations;
 
-    @Override public abstract String toString(); // subclasses MUST implement this
+    @Override public int compareTo(@NonNull Property that) {return COMPARATOR.compare(this, that);}
+
+    @Override public String toString() {return propertyType() + " " + rawName();}
+
+    protected abstract String propertyType();
+
+    public @NonNull T elemental() {return elemental;}
+
+    boolean isPublic() {return elemental().isPublic();}
+
+    boolean isJsonbTransient() {return annotations.contains(JsonbTransient.class);}
+
+    Optional<AnnotationWrapper> jsonbProperty() {return annotations.get(JsonbProperty.class);}
+
+    Optional<AnnotationWrapper> jsonbNumberFormat() {return annotations.get(JsonbNumberFormat.class);}
 
     public String name() {
         return annotatedName()
@@ -42,7 +60,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     }
 
     private Optional<String> annotatedName() {
-        return annotations.get(JsonbProperty.class)
+        return jsonbProperty()
                 .map(an -> an.getStringProperty("value"))
                 .flatMap(name -> name.isEmpty() ? Optional.empty() : Optional.of(name));
     }
@@ -64,29 +82,20 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     protected String rawName() {return elemental().name();}
 
-    public @NonNull T elemental() {return elemental;}
-
-    boolean isPublic() {return elemental().isPublic();}
-
-    boolean isJsonbTransient() {return annotations.contains(JsonbTransient.class);}
-
-    boolean isJsonbProperty() {return annotations.contains(JsonbProperty.class);}
-
-    @Override public int compareTo(@NonNull Property that) {return COMPARATOR.compare(this, that);}
-
     public Property<?> merge(Property<?> that) {
         elemental.note("merge " + this + " and " + that);
         var optionalBase = this.or(that);
         if (optionalBase.isOr()) return null;
         var base = optionalBase.get();
         var other = (base == this) ? that : this;
-        if (!base.isJsonbProperty() && other.isJsonbProperty()) {
-            base = base.withAnnotations(other.annotations);
+        // TODO merge other annotations
+        if (base.jsonbProperty().isEmpty()) {
+            if (other.jsonbProperty().isPresent()) {
+                base = base.withAnnotations(other.annotations);
+            }
         }
         return base;
     }
-
-    protected abstract Property<?> withAnnotations(@NonNull ElementalAnnotations annotations);
 
     /// The algorithm is described [here](https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0#scope-and-field-access-strategy).
     ///
@@ -96,26 +105,48 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     /// then this field is ignored.
     /// If no matching getter method exists and the field is public,
     /// then the value is obtained directly from the field.
+    protected abstract Property<?> withAnnotations(@NonNull ElementalAnnotations annotations);
+
     protected abstract <V extends Property<?>> Either<V, String> or(V that);
 
 
     final void write(TypeGenerator typeGenerator, StringBuilder out) {
         if (isJsonbTransient()) {
-            if (isJsonbProperty()) {
+            if (jsonbProperty().isPresent()) {
                 writeJsonbException(typeGenerator, out,
                         "don't annotate something as JsonbProperty that you also annotated as JsonbTransient");
             } else {
                 writeComment(out, this + " is annotated as JsonbTransient");
             }
+        } else if (elemental.isTransient()) {
+            writeComment(out, this + " is transient");
         } else if (!elemental.isPublic()) {
             writeComment(out, this + " is not public");
+        } else if (PRIMITIVE_TYPES.contains(typeName()) && jsonbNumberFormat().isEmpty()) {
+            writeComments(out);
+            writeDirect(valueExpression(), out);
         } else {
-            writeTo(typeGenerator, out);
+            writeComments(out);
+            writeViaContext(full(valueExpression(), typeGenerator), out);
         }
     }
 
-    protected void writeJsonbException(TypeGenerator typeGenerator, StringBuilder out, String message) {
-        elemental.warning(message); // TODO this should normally be an error, but that would break the TCK build. Make it configurable?
+    private String full(String valueExpression, TypeGenerator typeGenerator) {
+        return jsonbNumberFormat().map(jsonbNumberFormat -> {
+            typeGenerator.addImport(NumberFormat.class.getName());
+            typeGenerator.addImport(Locale.class.getName());
+            typeGenerator.addImport(Optional.class.getName());
+            return "Optional.ofNullable(" + valueExpression + ")\n" +
+                   "            .map(NumberFormat.getInstance(Locale.of(\""
+                   + jsonbNumberFormat.getStringProperty("locale") + "\"))::format)\n" +
+                   "            .orElse(null)";
+        }).orElse(valueExpression);
+    }
+
+    // the TCK requires an exception to be thrown at runtime, even though we detect the problem already at compile time
+    // TODO make this configurable and write an `error` notification
+    protected void writeJsonbException(TypeGenerator typeGenerator, StringBuilder out, @SuppressWarnings("SameParameterValue") String message) {
+        elemental.warning(message);
         typeGenerator.addImport("jakarta.json.bind.JsonbException");
         // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
         out.append("        if (true) throw new JsonbException(\"").append(message.replace("\"", "\\\"")).append("\");\n");
@@ -123,30 +154,41 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     protected void writeComment(StringBuilder out, String message) {out.append("        // ").append(message).append("\n");}
 
-    protected abstract void writeTo(TypeGenerator typeGenerator, StringBuilder out);
+    /**
+     * Append the code required to serialize a primitive and non-nullable JSON key-value pair
+     * directly to the {@link jakarta.json.stream.JsonGenerator generator}
+     */
+    private void writeDirect(String valueExpression, StringBuilder out) {
+        out.append("        out.write(\"");
+        writeName(out);
+        out.append("\", ").append(valueExpression).append(");\n");
+    }
 
     /**
-     * Append the code required to serialize a JSON key-value pair, either a primitive and non-nullable type directly
-     * to the {@link jakarta.json.stream.JsonGenerator generator}, or a more complex type with the indirection
-     * of the {@link SerializationContext context}, which may, or may not, write a <code>null</code> value.
+     * Append the code required to serialize a potentially nullable or complex JSON key-value pair,
+     * with the indirection of the {@link SerializationContext context}, which may, or may not,
+     * write a <code>null</code> value.
      */
-    protected void write(String typeName, String valueExpression, StringBuilder out) {
-        String name;
+    private void writeViaContext(String valueExpression, StringBuilder out) {
+        out.append("        context.serialize(\"");
+        writeName(out);
+        out.append("\", ").append(valueExpression).append(", out);\n");
+    }
+
+    protected abstract String typeName();
+
+    protected abstract String valueExpression();
+
+    protected void writeName(StringBuilder out) {out.append(name());}
+
+    private void writeComments(StringBuilder out) {
         if (annotatedName().isPresent()) {
             writeComment(out, "name from JsonbProperty annotation");
-            name = annotatedName().get();
         } else if (derivedName().isPresent()) {
-            writeComment(out, "name derived from \"" + rawName() + "\" with strategy " + config.propertyNamingStrategy());
-            name = derivedName().get();
-        } else {
-            name = rawName();
+            writeComment(out, "name derived from " + propertyType() + " name " +
+                              "with strategy " + config.propertyNamingStrategy());
         }
-        if (PRIMITIVE_TYPES.contains(typeName)) {
-            out.append("        out.write(\"").append(name).append("\", ")
-                    .append(valueExpression).append(");\n");
-        } else {
-            out.append("        context.serialize(\"").append(name).append("\", ")
-                    .append(valueExpression).append(", out);\n");
-        }
+        jsonbNumberFormat().ifPresent(jsonbNumberFormat ->
+                writeComment(out, "number format from " + jsonbNumberFormat + " annotation on " + propertyType()));
     }
 }

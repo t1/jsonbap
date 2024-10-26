@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -42,6 +43,7 @@ abstract class AbstractJsonIT {
                 "\"averageScore\":" + (0.123d * i) + "," +
                 "\"firstName\":\"Jane-" + i + "\"," +
                 (nullValues ? "\"formerAddress\":null," : "") +
+                "\"income\":\"123.456.789,01\"," +
                 "\"lastName\":\"Doe-" + i + "\"," +
                 "\"member\":" + (i % 2 == 0) + "," +
                 "\"pets\":[" +
@@ -69,6 +71,7 @@ abstract class AbstractJsonIT {
                 .pet(new Cat("foo-" + i))
                 .pet(new Cat("bar-" + i))
                 .pet(new Dog("baz-" + i))
+                .income(BigDecimal.valueOf(123_456_789.01))
                 .build();
     }
 

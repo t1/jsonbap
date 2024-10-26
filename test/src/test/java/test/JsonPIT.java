@@ -9,7 +9,10 @@ import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
 
 import java.io.StringWriter;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 public class JsonPIT extends AbstractJsonIT {
     @Override String toJson(Object object) {
@@ -49,6 +52,9 @@ public class JsonPIT extends AbstractJsonIT {
         if (object.getFirstName() != null) {
             out.write("firstName", object.getFirstName());
         }
+        out.write("income", Optional.ofNullable(object.getIncome())
+                .map(NumberFormat.getInstance(Locale.of("de"))::format)
+                .orElse(null));
         if (object.getLastName() != null) {
             out.write("lastName", object.getLastName());
         }

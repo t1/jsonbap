@@ -1,6 +1,5 @@
 package com.github.t1.jsonbap.impl;
 
-import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.ElementalAnnotations;
 import com.github.t1.exap.insight.Field;
 import com.github.t1.exap.insight.Type;
@@ -20,7 +19,7 @@ class FieldProperty extends Property<Field> {
         return new FieldProperty(this.config, this.elemental, annotations);
     }
 
-    @Override public String toString() {return "field " + elemental.name();}
+    @Override protected String propertyType() {return "field";}
 
     @Override
     @SuppressWarnings("unchecked")
@@ -28,11 +27,7 @@ class FieldProperty extends Property<Field> {
         return Either.<T, String>value(that).with(Property::isPublic, (T) this);
     }
 
-    @Override protected void writeTo(TypeGenerator typeGenerator, StringBuilder out) {
-        if (elemental.isTransient()) {
-            writeComment(out, this + " is transient");
-        } else {
-            write(elemental().getType().getSimpleName(), "object." + rawName(), out);
-        }
-    }
+    @Override protected String typeName() {return elemental().getType().getSimpleName();}
+
+    @Override protected String valueExpression() {return "object." + rawName();}
 }

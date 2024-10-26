@@ -3,6 +3,7 @@ package com.github.t1.jsonbap.impl;
 import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.api.Bindable;
+import jakarta.json.bind.annotation.JsonbNumberFormat;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
 import org.junit.jupiter.api.AfterEach;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
+import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.LOWER_CASE_WITH_DASHES;
 import static javax.tools.StandardLocation.SOURCE_OUTPUT;
 import static org.assertj.core.api.BDDAssertions.then;
 
@@ -115,13 +117,14 @@ class JsonbSerializerGeneratorTest {
                             @Override
                             public void serialize(Cat object, JsonGenerator out, SerializationContext context) {
                                 out.writeStartObject();
-                                out.write("@type", "cat");
+                                context.serialize("@type", "cat", out);
                                 out.write("isCat", object.getIsCat());
                                 out.writeEnd();
                             }
                         }
                         """);
     }
+
 
     @SuppressWarnings("unused")
     public static class TransientContainer {
@@ -152,6 +155,120 @@ class JsonbSerializerGeneratorTest {
                                 out.writeStartObject();
                                 context.serialize("normalField", object.normalField, out);
                                 // field transientField is transient
+                                out.writeEnd();
+                            }
+                        }
+                        """);
+    }
+
+
+    @SuppressWarnings("unused")
+    @Bindable(propertyNamingStrategy = LOWER_CASE_WITH_DASHES)
+    public static class KebabCaseFieldContainer {
+        public String kebabField;
+    }
+
+    @Test
+    void shouldGenerateKebabCaseFieldWriter() {
+        generate(KebabCaseFieldContainer.class);
+
+        then(ENV.getCreatedResource(SOURCE_OUTPUT, KebabCaseFieldContainer.class.getPackage().getName(),
+                "JsonbSerializerGeneratorTest$KebabCaseFieldContainer$$JsonbSerializer")).isEqualTo(
+                """
+                        package com.github.t1.jsonbap.impl;
+                        
+                        import javax.annotation.processing.Generated;
+                        
+                        import jakarta.json.bind.serializer.JsonbSerializer;
+                        import jakarta.json.bind.serializer.SerializationContext;
+                        import jakarta.json.stream.JsonGenerator;
+                        
+                        @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
+                        public class JsonbSerializerGeneratorTest$KebabCaseFieldContainer$$JsonbSerializer implements JsonbSerializer<JsonbSerializerGeneratorTest$KebabCaseFieldContainer> {
+                        
+                            @Override
+                            public void serialize(JsonbSerializerGeneratorTest$KebabCaseFieldContainer object, JsonGenerator out, SerializationContext context) {
+                                out.writeStartObject();
+                                // name derived from field name with strategy LOWER_CASE_WITH_DASHES
+                                context.serialize("kebab-field", object.kebabField, out);
+                                out.writeEnd();
+                            }
+                        }
+                        """);
+    }
+
+
+    @SuppressWarnings("unused")
+    @Bindable(propertyNamingStrategy = LOWER_CASE_WITH_DASHES)
+    public static class KebabCaseGetterContainer {
+        public String getKebabValue() {return "kebab";}
+    }
+
+    @Test
+    void shouldGenerateKebabCaseGetterWriter() {
+        generate(KebabCaseGetterContainer.class);
+
+        then(ENV.getCreatedResource(SOURCE_OUTPUT, KebabCaseGetterContainer.class.getPackage().getName(),
+                "JsonbSerializerGeneratorTest$KebabCaseGetterContainer$$JsonbSerializer")).isEqualTo(
+                """
+                        package com.github.t1.jsonbap.impl;
+                        
+                        import javax.annotation.processing.Generated;
+                        
+                        import jakarta.json.bind.serializer.JsonbSerializer;
+                        import jakarta.json.bind.serializer.SerializationContext;
+                        import jakarta.json.stream.JsonGenerator;
+                        
+                        @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
+                        public class JsonbSerializerGeneratorTest$KebabCaseGetterContainer$$JsonbSerializer implements JsonbSerializer<JsonbSerializerGeneratorTest$KebabCaseGetterContainer> {
+                        
+                            @Override
+                            public void serialize(JsonbSerializerGeneratorTest$KebabCaseGetterContainer object, JsonGenerator out, SerializationContext context) {
+                                out.writeStartObject();
+                                // name derived from getter name with strategy LOWER_CASE_WITH_DASHES
+                                context.serialize("kebab-value", object.getKebabValue(), out);
+                                out.writeEnd();
+                            }
+                        }
+                        """);
+    }
+
+
+    @SuppressWarnings("unused")
+    public static class FormattedNumberContainer {
+        @JsonbNumberFormat(locale = "de")
+        public long formattedField;
+    }
+
+    @Test
+    void shouldGenerateFormattedNumberWriter() {
+        generate(FormattedNumberContainer.class);
+
+        then(ENV.getCreatedResource(SOURCE_OUTPUT, FormattedNumberContainer.class.getPackage().getName(),
+                "JsonbSerializerGeneratorTest$FormattedNumberContainer$$JsonbSerializer")).isEqualTo(
+                """
+                        package com.github.t1.jsonbap.impl;
+                        
+                        import java.text.NumberFormat;
+                        import java.util.Locale;
+                        import java.util.Optional;
+                        
+                        import javax.annotation.processing.Generated;
+                        
+                        import jakarta.json.bind.serializer.JsonbSerializer;
+                        import jakarta.json.bind.serializer.SerializationContext;
+                        import jakarta.json.stream.JsonGenerator;
+                        
+                        @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
+                        public class JsonbSerializerGeneratorTest$FormattedNumberContainer$$JsonbSerializer implements JsonbSerializer<JsonbSerializerGeneratorTest$FormattedNumberContainer> {
+                        
+                            @Override
+                            public void serialize(JsonbSerializerGeneratorTest$FormattedNumberContainer object, JsonGenerator out, SerializationContext context) {
+                                out.writeStartObject();
+                                // number format from @jakarta.json.bind.annotation.JsonbNumberFormat(locale="de", value="") annotation on field
+                                context.serialize("formattedField", Optional.ofNullable(object.formattedField)
+                                    .map(NumberFormat.getInstance(Locale.of("de"))::format)
+                                    .orElse(null), out);
                                 out.writeEnd();
                             }
                         }
