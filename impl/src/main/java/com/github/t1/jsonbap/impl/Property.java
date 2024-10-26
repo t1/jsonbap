@@ -88,13 +88,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         if (optionalBase.isOr()) return null;
         var base = optionalBase.get();
         var other = (base == this) ? that : this;
-        // TODO merge other annotations
-        if (base.jsonbProperty().isEmpty()) {
-            if (other.jsonbProperty().isPresent()) {
-                base = base.withAnnotations(other.annotations);
-            }
-        }
-        return base;
+        return base.withAnnotations(base.annotations.merge(other.annotations));
     }
 
     /// The algorithm is described [here](https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0#scope-and-field-access-strategy).
