@@ -3,41 +3,59 @@ package com.github.t1.jsonbap.impl;
 import com.github.t1.exap.insight.ElementalAnnotations;
 import com.github.t1.exap.insight.Method;
 import com.github.t1.exap.insight.Type;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.experimental.Accessors;
 
 import java.util.stream.Stream;
 
+@Getter @Accessors(fluent = true)
 class GetterProperty extends Property<Method> {
     static Stream<Property<Method>> getterProperties(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, Type type) {
         return type.getAllMethods().stream()
                 .filter(GetterProperty::isGetter)
-                .map(method -> new GetterProperty(jsonbapConfig, typeConfig, method, method.annotations()));
+                .map(method -> new GetterProperty(jsonbapConfig, typeConfig, method, method.annotations(), rawName(method)));
     }
 
     private static boolean isGetter(Method method) {
         return method.isPublic()
                && method.getParameters().isEmpty()
-               && method.name().length() > 3
-               && method.name().startsWith("get") // TODO booleans may start with `is`
-               && Character.isUpperCase(method.name().charAt(3))
                && !"java.lang.Object".equals(method.getDeclaringType().getFullName())
-               && !"void".equals(method.getReturnType().getFullName());
+               && !"void".equals(method.getReturnType().getFullName())
+               && (isNormalGetter(method) || isBooleanGetterWithIs(method));
     }
 
-    private GetterProperty(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, Method getter, ElementalAnnotations annotations) {
+    private static boolean isNormalGetter(Method method) {
+        return method.name().length() > 3
+               && method.name().startsWith("get")
+               && Character.isUpperCase(method.name().charAt(3));
+    }
+
+    private static boolean isBooleanGetterWithIs(Method method) {
+        return "boolean".equals(method.getReturnType().getFullName())
+               && method.name().length() > 2
+               && method.name().startsWith("is")
+               && Character.isUpperCase(method.name().charAt(2));
+    }
+
+    private static String rawName(Method method) {
+        var offset = isNormalGetter(method) ? 3 : 2;
+        var name = method.name();
+        return Character.toLowerCase(name.charAt(offset)) + name.substring(offset + 1);
+    }
+
+    private final String rawName;
+
+    private GetterProperty(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, Method getter, ElementalAnnotations annotations, String rawName) {
         super(jsonbapConfig, typeConfig, getter, annotations);
+        this.rawName = rawName;
     }
 
     @Override protected Property<?> withAnnotations(@NonNull ElementalAnnotations annotations) {
-        return new GetterProperty(this.jsonbapConfig, this.typeConfig, this.elemental, annotations);
+        return new GetterProperty(this.jsonbapConfig, this.typeConfig, this.elemental, annotations, this.rawName);
     }
 
     @Override protected String propertyType() {return "getter";}
-
-    @Override protected String rawName() {
-        var name = elemental.name();
-        return Character.toLowerCase(name.charAt(3)) + name.substring(4);
-    }
 
     @Override
     @SuppressWarnings("unchecked")

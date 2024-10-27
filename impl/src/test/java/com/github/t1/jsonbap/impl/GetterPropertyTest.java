@@ -30,6 +30,14 @@ class GetterPropertyTest {
         public void getNothing() {}
 
         public String getWithParam(String param) {return "withParam";}
+
+        public boolean isMember() {return true;}
+
+        public boolean issue() {return true;}
+
+        public boolean is() {return true;}
+
+        public String isNot() {return "not";}
     }
 
     @Test
@@ -108,6 +116,42 @@ class GetterPropertyTest {
     void shouldNotFindWithParam() {
         var found = getterProperties(jsonbapConfig, typeConfig, type)
                 .filter(getter -> "withParam".equals(getter.name()))
+                .findAny();
+
+        then(found).isEmpty();
+    }
+
+    @Test
+    void shouldFindMember() {
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
+                .filter(getter -> "member".equals(getter.name()))
+                .findAny();
+
+        then(found).isPresent();
+    }
+
+    @Test
+    void shouldNotFindIssue() {
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
+                .filter(getter -> "sue".equals(getter.name()) || "issue".equals(getter.name()))
+                .findAny();
+
+        then(found).isEmpty();
+    }
+
+    @Test
+    void shouldNotFindIs() {
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
+                .filter(getter -> "is".equals(getter.name()) || "".equals(getter.name()))
+                .findAny();
+
+        then(found).isEmpty();
+    }
+
+    @Test
+    void shouldNotFindIsNot() {
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
+                .filter(getter -> "not".equals(getter.name()))
                 .findAny();
 
         then(found).isEmpty();
