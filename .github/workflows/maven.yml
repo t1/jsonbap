@@ -1,0 +1,23 @@
+name: Java CI
+
+on:
+  push:
+  pull_request:
+  schedule: [ cron: '11 3 * * 5' ] # weekly: At 03:11 on Friday
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        jdk: [ 21, 23 ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.jdk }}
+          cache: 'maven'
+
+      - run: mvn --batch-mode --show-version --no-transfer-progress -DCI=GitHub install
