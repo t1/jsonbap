@@ -7,12 +7,14 @@ import jakarta.json.bind.annotation.JsonbNumberFormat;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
 import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.LOWER_CASE_WITH_DASHES;
+import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.StandardLocation.SOURCE_OUTPUT;
 import static org.assertj.core.api.BDDAssertions.then;
 
@@ -287,5 +289,6 @@ class JsonbSerializerGeneratorTest {
         try (var typeGenerator = new TypeGenerator(ENV.round(), type.getPackage(), className)) {
             generator.generate(typeGenerator);
         }
+        then(ENV.getMessages(null, ERROR)).isEmpty();
     }
 }

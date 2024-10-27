@@ -2,6 +2,7 @@ package com.github.t1.jsonbap.impl;
 
 import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.Elemental;
+import com.github.t1.exap.insight.ElementalKind;
 import com.github.t1.jsonbap.impl.Property.JsonbAnnotations.AnnotationWithSource;
 import jakarta.json.bind.annotation.JsonbNumberFormat;
 import jakarta.json.bind.annotation.JsonbProperty;
@@ -18,6 +19,7 @@ import java.util.Comparator;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static lombok.AccessLevel.PROTECTED;
 
@@ -50,9 +52,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     boolean isPublic() {return elemental().isPublic();}
 
-    boolean isJsonbTransient() {return annotations().jsonbTransient.isPresent();}
-
-    Optional<JsonbProperty> jsonbProperty() {return annotations().jsonbProperty();}
+    boolean isTransient() {return elemental.isTransient() || annotations().jsonbTransient.isPresent();}
 
     Optional<AnnotationWithSource<JsonbNumberFormat>> jsonbNumberFormat() {return annotations().jsonbNumberFormat();}
 
@@ -68,7 +68,8 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     }
 
     private Optional<String> annotatedName() {
-        return jsonbProperty()
+        return annotations().jsonbProperty()
+                .map(AnnotationWithSource::annotation)
                 .map(JsonbProperty::value)
                 .flatMap(name -> name.isEmpty() ? Optional.empty() : Optional.of(name));
     }
@@ -110,17 +111,12 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     protected abstract <V extends Property<?>> Either<V, String> or(V that);
 
-
     final void write(TypeGenerator typeGenerator, StringBuilder out) {
-        if (isJsonbTransient()) {
-            if (jsonbProperty().isPresent()) {
-                jsonbException(typeGenerator, out,
-                        "don't annotate something as JsonbProperty that you also annotated as JsonbTransient");
-            } else {
-                writeComment(out, this + " is annotated as JsonbTransient");
-            }
-        } else if (elemental.isTransient()) {
-            writeComment(out, this + " is transient");
+        if (isTransient()) {
+            var transientMessage = this + " is transient" + annotations().jsonbTransient.map(a -> " from " + a).orElse("");
+            writeComment(out, transientMessage);
+            annotations().all().filter(a -> !(a.isA(JsonbTransient.class))).findAny().ifPresent(a ->
+                    jsonbException(typeGenerator, out, transientMessage + " but also annotated " + a));
         } else if (!elemental.isPublic()) {
             writeComment(out, this + " is not public");
         } else if (PRIMITIVE_TYPES.contains(typeName()) && jsonbNumberFormat().isEmpty()) {
@@ -178,12 +174,13 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         return jsonbapConfig.frenchNnbspWorkaround() ? "            .map(f -> f.replace('\\u202f', '\\u00a0'))\n" : "";
     }
 
-    protected void jsonbException(TypeGenerator typeGenerator, StringBuilder out, @SuppressWarnings("SameParameterValue") String message) {
+    protected void jsonbException(TypeGenerator typeGenerator, StringBuilder out, String message) {
+        typeGenerator.addImport("jakarta.json.bind.JsonbException");
+        // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
+        out.append("        if (true) throw new JsonbException(\"").append(message.replace("\"", "\\\"")).append("\");\n");
+
         if (jsonbapConfig.throwJsonbExceptionsAtRuntime()) {
             elemental.warning(message);
-            typeGenerator.addImport("jakarta.json.bind.JsonbException");
-            // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
-            out.append("        if (true) throw new JsonbException(\"").append(message.replace("\"", "\\\"")).append("\");\n");
         } else {
             elemental.error(message);
         }
@@ -219,16 +216,16 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     protected void writeName(StringBuilder out) {out.append(name());}
 
     record JsonbAnnotations(
-            Optional<JsonbTransient> jsonbTransient,
-            Optional<JsonbProperty> jsonbProperty,
+            Optional<AnnotationWithSource<JsonbTransient>> jsonbTransient,
+            Optional<AnnotationWithSource<JsonbProperty>> jsonbProperty,
             Optional<AnnotationWithSource<JsonbNumberFormat>> jsonbNumberFormat) {
 
         /// Derive annotations from this elemental or eventually it's containers.
         /// Merging between field and getter happens later.
         JsonbAnnotations(Elemental elemental) {
             this(
-                    elemental.annotation(JsonbTransient.class),
-                    elemental.annotation(JsonbProperty.class),
+                    findAnnotationSource(elemental, JsonbTransient.class),
+                    findAnnotationSource(elemental, JsonbProperty.class),
                     findAnnotationSource(elemental, JsonbNumberFormat.class));
         }
 
@@ -239,15 +236,33 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             return Optional.empty();
         }
 
+        Stream<AnnotationWithSource<?>> all() {
+            return Stream.of(jsonbTransient, jsonbProperty, jsonbNumberFormat)
+                    .flatMap(Optional::stream);
+        }
+
         JsonbAnnotations merge(JsonbAnnotations that) {
             return new JsonbAnnotations(
                     this.jsonbTransient.or(that::jsonbTransient),
                     this.jsonbProperty.or(that::jsonbProperty),
-                    this.jsonbNumberFormat.or(that::jsonbNumberFormat));
+                    sorted(this.jsonbNumberFormat, that.jsonbNumberFormat));
+        }
+
+        /// Find the most specific annotations, i.e. the ones closest to the field or getter.
+        @SafeVarargs
+        private <A extends Annotation> Optional<AnnotationWithSource<A>> sorted(Optional<AnnotationWithSource<A>>... values) {
+            return Stream.of(values)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .min(Comparator.comparing(AnnotationWithSource::sourceKind));
         }
 
         record AnnotationWithSource<A extends Annotation>(A annotation, Elemental source) {
             @Override public String toString() {return annotation + " on " + source;}
+
+            public ElementalKind sourceKind() {return source.kind();}
+
+            public boolean isA(Class<?> type) {return type.isInstance(annotation);}
         }
     }
 }
