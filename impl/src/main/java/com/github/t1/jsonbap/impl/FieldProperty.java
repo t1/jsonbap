@@ -8,15 +8,20 @@ import lombok.NonNull;
 import java.util.stream.Stream;
 
 class FieldProperty extends Property<Field> {
-    static Stream<Property<Field>> fieldProperties(@NonNull TypeConfig config, @NonNull Type type) {
+    static Stream<Property<Field>> fieldProperties(
+            @NonNull JsonbapConfig jsonbapConfig,
+            @NonNull TypeConfig typeConfig,
+            @NonNull Type type) {
         return type.getAllFields().stream()
-                .map(field -> new FieldProperty(config, field, field.annotations()));
+                .map(field -> new FieldProperty(jsonbapConfig, typeConfig, field, field.annotations()));
     }
 
-    private FieldProperty(TypeConfig config, Field field, ElementalAnnotations annotations) {super(config, field, annotations);}
+    private FieldProperty(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, Field field, ElementalAnnotations annotations) {
+        super(jsonbapConfig, typeConfig, field, annotations);
+    }
 
     @Override protected Property<?> withAnnotations(@NonNull ElementalAnnotations annotations) {
-        return new FieldProperty(this.config, this.elemental, annotations);
+        return new FieldProperty(this.jsonbapConfig, this.typeConfig, this.elemental, annotations);
     }
 
     @Override protected String propertyType() {return "field";}

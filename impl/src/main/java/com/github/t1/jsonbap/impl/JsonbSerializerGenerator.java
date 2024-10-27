@@ -28,11 +28,12 @@ class JsonbSerializerGenerator {
         return ReflectionProcessingEnvironment.ENV.type(klass);
     }
 
+    private final JsonbapConfig jsonbapConfig;
     private final Type type;
-    private final TypeConfig config;
+    private final TypeConfig typeConfig;
 
-    public JsonbSerializerGenerator(Type type) {
-        this(type, new TypeConfig(type.annotation(Bindable.class)));
+    public JsonbSerializerGenerator(JsonbapConfig jsonbapConfig, Type type) {
+        this(jsonbapConfig, type, new TypeConfig(type.annotation(Bindable.class)));
     }
 
     public String className() {
@@ -64,11 +65,11 @@ class JsonbSerializerGenerator {
     private List<Property<?>> properties() {
         return Stream.concat(
                         Stream.concat(
-                                typeProperties(config, type),
+                                typeProperties(jsonbapConfig, typeConfig, type),
                                 Stream.empty()), // just for symmetry
                         Stream.concat(
-                                fieldProperties(config, type),
-                                getterProperties(config, type)))
+                                fieldProperties(jsonbapConfig, typeConfig, type),
+                                getterProperties(jsonbapConfig, typeConfig, type)))
                 .sorted()
                 .collect(propertiesMerger());
     }

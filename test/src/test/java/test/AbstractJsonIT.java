@@ -24,6 +24,8 @@ abstract class AbstractJsonIT {
     protected static final List<Person> DATA = IntStream.range(0, N)
             .mapToObj(AbstractJsonIT::person)
             .collect(toList());
+    // narrow no-break space; used in French numbers as thousands-separator in JDK 13+
+    protected static final char NNBSP = '\u202f';
 
     protected static String repeatedJson(boolean nullValues) {
         return IntStream.range(0, N).mapToObj(i -> json(i, nullValues))
@@ -43,7 +45,7 @@ abstract class AbstractJsonIT {
                 "\"averageScore\":" + (0.123d * i) + "," +
                 "\"firstName\":\"Jane-" + i + "\"," +
                 (nullValues ? "\"formerAddress\":null," : "") +
-                "\"income\":\"123.456.789,01\"," +
+                "\"income\":\"123" + NNBSP + "456" + NNBSP + "789,01\"," +
                 "\"lastName\":\"Doe-" + i + "\"," +
                 "\"member\":" + (i % 2 == 0) + "," +
                 "\"pets\":[" +

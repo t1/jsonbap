@@ -8,10 +8,10 @@ import lombok.NonNull;
 import java.util.stream.Stream;
 
 class GetterProperty extends Property<Method> {
-    static Stream<Property<Method>> getterProperties(TypeConfig config, Type type) {
+    static Stream<Property<Method>> getterProperties(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, Type type) {
         return type.getAllMethods().stream()
                 .filter(GetterProperty::isGetter)
-                .map(method -> new GetterProperty(config, method, method.annotations()));
+                .map(method -> new GetterProperty(jsonbapConfig, typeConfig, method, method.annotations()));
     }
 
     private static boolean isGetter(Method method) {
@@ -24,10 +24,12 @@ class GetterProperty extends Property<Method> {
                && !"void".equals(method.getReturnType().getFullName());
     }
 
-    private GetterProperty(TypeConfig config, Method getter, ElementalAnnotations annotations) {super(config, getter, annotations);}
+    private GetterProperty(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, Method getter, ElementalAnnotations annotations) {
+        super(jsonbapConfig, typeConfig, getter, annotations);
+    }
 
     @Override protected Property<?> withAnnotations(@NonNull ElementalAnnotations annotations) {
-        return new GetterProperty(this.config, this.elemental, annotations);
+        return new GetterProperty(this.jsonbapConfig, this.typeConfig, this.elemental, annotations);
     }
 
     @Override protected String propertyType() {return "getter";}

@@ -53,7 +53,7 @@ public class JsonPIT extends AbstractJsonIT {
             out.write("firstName", object.getFirstName());
         }
         out.write("income", Optional.ofNullable(object.getIncome())
-                .map(NumberFormat.getInstance(Locale.of("de"))::format)
+                .map(NumberFormat.getInstance(Locale.of("fr"))::format)
                 .orElse(null));
         if (object.getLastName() != null) {
             out.write("lastName", object.getLastName());

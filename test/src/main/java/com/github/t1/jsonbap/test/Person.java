@@ -38,8 +38,8 @@ public class Person {
 
     @Singular List<Pet> pets;
 
-    @JsonbNumberFormat(locale = "de")
-    @JsonFormat(shape = STRING, locale = "de") // this is not enough; we're cheating in JacksonIT
+    @JsonbNumberFormat(locale = "fr")
+    @JsonFormat(shape = STRING, locale = "fr") // this is not enough for Jackson, so we're cheating in JacksonIT
     public BigDecimal income;
 
     public String getFirstName() {return firstName;}

@@ -11,6 +11,8 @@ import jakarta.json.bind.serializer.SerializationContext;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Comparator;
 import java.util.Locale;
@@ -33,7 +35,8 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             "double",
             "boolean");
 
-    protected final TypeConfig config;
+    protected final JsonbapConfig jsonbapConfig;
+    protected final TypeConfig typeConfig;
     protected final T elemental;
     private final ElementalAnnotations annotations;
 
@@ -67,7 +70,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     private Optional<String> derivedName() {
         var raw = rawName();
-        return Optional.ofNullable(switch (config.propertyNamingStrategy()) {
+        return Optional.ofNullable(switch (typeConfig.propertyNamingStrategy()) {
             case IDENTITY, CASE_INSENSITIVE -> null;
             case LOWER_CASE_WITH_DASHES -> raw.replaceAll("([a-z])([A-Z])", "$1-$2").toLowerCase();
             case LOWER_CASE_WITH_UNDERSCORES -> raw.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
@@ -107,7 +110,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     final void write(TypeGenerator typeGenerator, StringBuilder out) {
         if (isJsonbTransient()) {
             if (jsonbProperty().isPresent()) {
-                writeJsonbException(typeGenerator, out,
+                jsonbException(typeGenerator, out,
                         "don't annotate something as JsonbProperty that you also annotated as JsonbTransient");
             } else {
                 writeComment(out, this + " is annotated as JsonbTransient");
@@ -125,25 +128,66 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         }
     }
 
+    private void writeComments(StringBuilder out) {
+        if (annotatedName().isPresent()) {
+            writeComment(out, "name from JsonbProperty annotation");
+        } else if (derivedName().isPresent()) {
+            writeComment(out, "name derived from " + propertyType() + " name " +
+                              "with strategy " + typeConfig.propertyNamingStrategy());
+        }
+        jsonbNumberFormat().ifPresent(jsonbNumberFormat ->
+                writeComment(out, "number format from " + jsonbNumberFormat + " annotation on " + propertyType()));
+    }
+
     private String full(String valueExpression, TypeGenerator typeGenerator) {
         return jsonbNumberFormat().map(jsonbNumberFormat -> {
-            typeGenerator.addImport(NumberFormat.class.getName());
-            typeGenerator.addImport(Locale.class.getName());
+            // TODO as the config is static, it should be possible to do the formatting in far better performing inline code
+            var formatter = getFormatterExpression(jsonbNumberFormat, typeGenerator);
             typeGenerator.addImport(Optional.class.getName());
             return "Optional.ofNullable(" + valueExpression + ")\n" +
-                   "            .map(NumberFormat.getInstance(Locale.of(\""
-                   + jsonbNumberFormat.getStringProperty("locale") + "\"))::format)\n" +
+                   "            .map(" + formatter + "::format)\n" +
+                   frenchNnbspWorkaround() +
                    "            .orElse(null)";
         }).orElse(valueExpression);
     }
 
-    // the TCK requires an exception to be thrown at runtime, even though we detect the problem already at compile time
-    // TODO make this configurable and write an `error` notification
-    protected void writeJsonbException(TypeGenerator typeGenerator, StringBuilder out, @SuppressWarnings("SameParameterValue") String message) {
-        elemental.warning(message);
-        typeGenerator.addImport("jakarta.json.bind.JsonbException");
-        // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
-        out.append("        if (true) throw new JsonbException(\"").append(message.replace("\"", "\\\"")).append("\");\n");
+    private static String getFormatterExpression(AnnotationWrapper jsonbNumberFormat, TypeGenerator typeGenerator) {
+        var locale = jsonbNumberFormat.getStringProperty("locale");
+        var format = jsonbNumberFormat.getStringProperty("value");
+        if (JsonbNumberFormat.DEFAULT_LOCALE.equals(locale)) {
+            if (format.isEmpty()) {
+                typeGenerator.addImport(NumberFormat.class.getName());
+                return "NumberFormat.getInstance()";
+            } else {
+                typeGenerator.addImport(DecimalFormat.class.getName());
+                return "new DecimalFormat(\"" + format + "\")";
+            }
+        } else {
+            typeGenerator.addImport(Locale.class.getName());
+            if (format.isEmpty()) {
+                typeGenerator.addImport(NumberFormat.class.getName());
+                return "NumberFormat.getInstance(Locale.of(\"" + locale + "\"))";
+            } else {
+                typeGenerator.addImport(DecimalFormat.class.getName());
+                typeGenerator.addImport(DecimalFormatSymbols.class.getName());
+                return "new DecimalFormat(\"" + format + "\", DecimalFormatSymbols.getInstance(Locale.of(\"" + locale + "\")))";
+            }
+        }
+    }
+
+    private String frenchNnbspWorkaround() {
+        return jsonbapConfig.frenchNnbspWorkaround() ? "            .map(f -> f.replace('\\u202f', '\\u00a0'))\n" : "";
+    }
+
+    protected void jsonbException(TypeGenerator typeGenerator, StringBuilder out, @SuppressWarnings("SameParameterValue") String message) {
+        if (jsonbapConfig.throwJsonbExceptionsAtRuntime()) {
+            elemental.warning(message);
+            typeGenerator.addImport("jakarta.json.bind.JsonbException");
+            // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
+            out.append("        if (true) throw new JsonbException(\"").append(message.replace("\"", "\\\"")).append("\");\n");
+        } else {
+            elemental.error(message);
+        }
     }
 
     protected void writeComment(StringBuilder out, String message) {out.append("        // ").append(message).append("\n");}
@@ -174,15 +218,4 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     protected abstract String valueExpression();
 
     protected void writeName(StringBuilder out) {out.append(name());}
-
-    private void writeComments(StringBuilder out) {
-        if (annotatedName().isPresent()) {
-            writeComment(out, "name from JsonbProperty annotation");
-        } else if (derivedName().isPresent()) {
-            writeComment(out, "name derived from " + propertyType() + " name " +
-                              "with strategy " + config.propertyNamingStrategy());
-        }
-        jsonbNumberFormat().ifPresent(jsonbNumberFormat ->
-                writeComment(out, "number format from " + jsonbNumberFormat + " annotation on " + propertyType()));
-    }
 }

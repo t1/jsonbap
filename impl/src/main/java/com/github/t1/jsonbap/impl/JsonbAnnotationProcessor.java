@@ -6,12 +6,14 @@ import com.github.t1.exap.SupportedAnnotationClasses;
 import com.github.t1.exap.insight.SourceAlreadyExistsException;
 import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.api.Bindable;
-import lombok.extern.slf4j.Slf4j;
 
 @SupportedAnnotationClasses({Bindable.class})
-@Slf4j
 public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
+    private JsonbapConfig context;
+
     @Override public boolean process(Round round) {
+        this.context = new JsonbapConfig(processingEnv);
+        note("processor context " + context);
         round.typesAnnotatedWith(Bindable.class).forEach(this::process);
         return false;
     }
@@ -26,10 +28,9 @@ public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
                 .forEach(this::process));
     }
 
-    private static void generateSerializerFor(Type type) {
-        var generator = new JsonbSerializerGenerator(type);
-        log.info("generate {}", generator.className());
-        type.warning("generate " + generator.className()); // TODO use note
+    private void generateSerializerFor(Type type) {
+        var generator = new JsonbSerializerGenerator(context, type);
+        type.note("generate " + generator.className());
         try (var typeGenerator = type.getPackage().openTypeGenerator(generator.className())) {
             generator.generate(typeGenerator);
         } catch (SourceAlreadyExistsException e) {

@@ -56,7 +56,7 @@ public class StringWriterIT extends AbstractJsonIT {
             delim = ',';
         }
         // this is only safe with a fixed format, as it could otherwise contain double quotes, etc.
-        out.append(delim).append("\"income\":\"").append(NumberFormat.getInstance(Locale.of("de")).format(object.getIncome())).append('"');
+        out.append(delim).append("\"income\":\"").append(NumberFormat.getInstance(Locale.of("fr")).format(object.getIncome())).append('"');
         if (object.getLastName() != null) {
             out.append(delim).append("\"lastName\":\"").append(object.getLastName()).append('"');
             delim = ',';

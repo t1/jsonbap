@@ -14,6 +14,7 @@ class JacksonIT extends AbstractJsonIT {
     @Override String toJson(Object object) {
         return MAPPER.writeValueAsString(object)
                 // TODO cheating! But I'm too lazy to write the custom serializer required by Jackson 😳
-                .replace("\"income\":\"123456789.01\"", "\"income\":\"123.456.789,01\"");
+                .replace("\"income\":\"123456789.01\"",
+                        "\"income\":\"123" + NNBSP + "456" + NNBSP + "789,01\"");
     }
 }

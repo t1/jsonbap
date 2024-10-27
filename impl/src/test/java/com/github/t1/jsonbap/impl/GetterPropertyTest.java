@@ -10,7 +10,8 @@ import static org.assertj.core.api.BDDAssertions.then;
 
 class GetterPropertyTest {
     private final Type type = ENV.type(Pojo.class);
-    private final TypeConfig config = new TypeConfig(IDENTITY);
+    private final JsonbapConfig jsonbapConfig = new JsonbapConfig();
+    private final TypeConfig typeConfig = new TypeConfig(IDENTITY);
 
     @SuppressWarnings("unused")
     static class Pojo {
@@ -33,7 +34,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldFindRealGetter() {
-        var found = getterProperties(config, type)
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
                 .filter(getter -> "description".equals(getter.name()))
                 .findAny();
 
@@ -42,7 +43,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldFindX() {
-        var found = getterProperties(config, type)
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
                 .filter(getter -> "x".equals(getter.name()))
                 .findAny();
 
@@ -51,7 +52,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindStatic() {
-        var found = getterProperties(config, type)
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
                 .filter(getter -> "static".equals(getter.name()))
                 .findAny();
 
@@ -60,7 +61,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindPrivate() {
-        var found = getterProperties(config, type)
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
                 .filter(getter -> "private".equals(getter.name()))
                 .findAny();
 
@@ -69,7 +70,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindGet() {
-        var found = getterProperties(config, type)
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
                 .filter(getter -> "get".equals(getter.name()))
                 .findAny();
 
@@ -78,7 +79,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindGetting() {
-        var found = getterProperties(config, type)
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
                 .filter(getter -> "ting".equals(getter.name()))
                 .findAny();
 
@@ -87,7 +88,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindClassGetter() {
-        var found = getterProperties(config, type)
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
                 .filter(getter -> "class".equals(getter.name()))
                 .findAny();
 
@@ -96,7 +97,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindVoid() {
-        var found = getterProperties(config, type)
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
                 .filter(getter -> "nothing".equals(getter.name()))
                 .findAny();
 
@@ -105,7 +106,7 @@ class GetterPropertyTest {
 
     @Test
     void shouldNotFindWithParam() {
-        var found = getterProperties(config, type)
+        var found = getterProperties(jsonbapConfig, typeConfig, type)
                 .filter(getter -> "withParam".equals(getter.name()))
                 .findAny();
 

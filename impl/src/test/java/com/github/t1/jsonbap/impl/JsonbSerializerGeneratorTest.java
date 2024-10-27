@@ -281,7 +281,7 @@ class JsonbSerializerGeneratorTest {
     }
 
     private static void generate(Type type, Optional<Bindable> bindable) {
-        var generator = new JsonbSerializerGenerator(type, new TypeConfig(bindable));
+        var generator = new JsonbSerializerGenerator(new JsonbapConfig(), type, new TypeConfig(bindable));
         var className = generator.className();
 
         try (var typeGenerator = new TypeGenerator(ENV.round(), type.getPackage(), className)) {

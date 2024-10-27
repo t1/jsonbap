@@ -14,8 +14,8 @@ import java.util.stream.Stream;
 ///
 /// @see jakarta.json.bind.annotation.JsonbTypeInfo
 class TypeProperty extends Property<Type> {
-    static Stream<Property<Type>> typeProperties(TypeConfig config, Type type) {
-        return typeInfo(type).map(typeInfo -> new TypeProperty(config, type, type.annotations(), typeInfo));
+    static Stream<Property<Type>> typeProperties(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, Type type) {
+        return typeInfo(type).map(typeInfo -> new TypeProperty(jsonbapConfig, typeConfig, type, type.annotations(), typeInfo));
     }
 
     private static Stream<AnnotationWrapper> typeInfo(Type type) {
@@ -31,13 +31,13 @@ class TypeProperty extends Property<Type> {
 
     private final AnnotationWrapper typeInfo;
 
-    public TypeProperty(TypeConfig config, Type type, ElementalAnnotations annotations, AnnotationWrapper typeInfo) {
-        super(config, type, annotations);
+    public TypeProperty(JsonbapConfig jsonbapConfig, TypeConfig config, Type type, ElementalAnnotations annotations, AnnotationWrapper typeInfo) {
+        super(jsonbapConfig, config, type, annotations);
         this.typeInfo = typeInfo;
     }
 
     @Override protected Property<?> withAnnotations(@NonNull ElementalAnnotations annotations) {
-        return new TypeProperty(this.config, this.elemental, annotations, this.typeInfo);
+        return new TypeProperty(this.jsonbapConfig, this.typeConfig, this.elemental, annotations, this.typeInfo);
     }
 
     @Override protected String propertyType() {return "type";}
