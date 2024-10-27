@@ -72,4 +72,25 @@
             <!--not <scope>test</scope>, as we use jackson annotations-->
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <annotationProcessors>
+                        <!-- specify the order of processors, so lombok can generate the getters and setters -->
+                        <!-- before jsonbap uses them -->
+                        <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor
+                        </annotationProcessor>
+                        <annotationProcessor>lombok.launch.AnnotationProcessorHider$ClaimingProcessor
+                        </annotationProcessor>
+                        <annotationProcessor>com.github.t1.jsonbap.impl.JsonbAnnotationProcessor</annotationProcessor>
+                    </annotationProcessors>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

@@ -61,7 +61,7 @@ public class StringWriterIT extends AbstractJsonIT {
             out.append(delim).append("\"lastName\":\"").append(object.getLastName()).append('"');
             delim = ',';
         }
-        out.append(delim).append("\"member\":").append(Boolean.toString(object.getMember()));
+        out.append(delim).append("\"member\":").append(Boolean.toString(object.isMember()));
         if (object.getPets() != null) {
             out.append(delim).append("\"pets\":[");
             var first = true;

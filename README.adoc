@@ -2,7 +2,8 @@
 
 [note]
 ====
-This project is in a very early stage and still far from ready for production use. Currently, only 16% of the JSON-B TCK tests pass.
+This project is in a very early stage and still far from ready for production use.
+Currently, only 16% of the JSON-B TCK tests pass.
 ====
 
 `jsonbap` = JSON-B Annotation Processor
@@ -13,7 +14,10 @@ Nice side effect: If you should need to debug your JSON-B mappings, you can simp
 
 == Background
 
-https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0[JSON-B] is a standard API for converting Java objects to and from JSON documents. It's part of the Jakarta EE platform and is used by many other libraries and frameworks. The reference implementation of JSON-B is https://github.com/eclipse-ee4j/yasson[Yasson], which was never designed to be fast, not even being production ready was a real design goal. https://github.com/FasterXML/jackson[Jackson], for example, is much faster and was in use for years before JSON-B, but it's not a standard API. Sadly, people conclude that JSON-B is slow and use Jackson instead.
+https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0[JSON-B] is a standard API for converting Java objects to and from JSON documents.
+It's part of the Jakarta EE platform and is used by many other libraries and frameworks.
+The reference implementation of JSON-B is https://github.com/eclipse-ee4j/yasson[Yasson], which was never designed to be fast, not even being production ready was a real design goal. https://github.com/FasterXML/jackson[Jackson], for example, is much faster and was in use for years before JSON-B, but it's not a standard API.
+Sadly, people conclude that JSON-B is slow and use Jackson instead.
 
 In principle, this works very similar to https://github.com/ngs-doo/dsl-json[DSL-Json] or https://github.com/quarkusio/qson[QSON], but with focus and proper support for JSON-B (when it's finally done), and it works as an annotation processor.
 
@@ -51,7 +55,33 @@ Careful: these benchmarks seem to be completely wrong.
 
 == Limitations
 
-This is an annotation processor generating source code. This makes things fast, but brings things to look out for:
+This is an annotation processor generating source code.
+This makes things fast, but brings things to look out for:
 
 * All classes that need to be (de)serialized have to be annotated as `@Bindable`, or (if it's not your own source) be listed in the `value` of some `@Bindable` annotation.
-* Configurations in the JSON-B API, like the `jakarta.json.bind.config.PropertyNamingStrategy`, assume to be evaluated at runtime. When generating the source code, this has not yet been specified. Instead, you can set the `propertyNamingStrategy` in the `@Bindable` annotation.
+* Configurations in the JSON-B API, like the `jakarta.json.bind.config.PropertyNamingStrategy`, assume to be evaluated at runtime.
+When generating the source code, this has not yet been specified.
+Instead, you can set the `propertyNamingStrategy` in the `@Bindable` annotation.
+
+== Lombok
+
+If you use Lombok to generate getters, you must make sure that the Lombok runs before the `jsonbap`.
+To do so, specify the processor classes, e.g. for Maven in the `maven-compiler-plugin`:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <version>3.13.0</version>
+    <configuration>
+        <annotationProcessors>
+            <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor
+            </annotationProcessor>
+            <annotationProcessor>lombok.launch.AnnotationProcessorHider$ClaimingProcessor
+            </annotationProcessor>
+            <annotationProcessor>com.github.t1.jsonbap.impl.JsonbAnnotationProcessor</annotationProcessor>
+        </annotationProcessors>
+    </configuration>
+</plugin>
+----

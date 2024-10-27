@@ -22,43 +22,22 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 @JsonPropertyOrder(alphabetic = true)
 @JsonInclude(NON_NULL)
 @Data @With @Builder @AllArgsConstructor @NoArgsConstructor
-@SuppressWarnings("LombokGetterMayBeUsed") // lombok may run after jsonbap
 public class Person {
-    String firstName;
-    String lastName;
-    int age;
-    double averageScore;
+    private String firstName;
+    private String lastName;
+    private int age;
+    private double averageScore;
 
-    Address address;
-    Address formerAddress;
+    private Address address;
+    private Address formerAddress;
 
-    boolean member;
-    @Singular List<String> roles;
-    long registrationTimestamp;
+    private boolean member;
+    private @Singular List<String> roles;
+    private long registrationTimestamp;
 
-    @Singular List<Pet> pets;
+    private @Singular List<Pet> pets;
 
     @JsonbNumberFormat(locale = "fr")
     @JsonFormat(shape = STRING, locale = "fr") // this is not enough for Jackson, so we're cheating in JacksonIT
-    public BigDecimal income;
-
-    public String getFirstName() {return firstName;}
-
-    public String getLastName() {return lastName;}
-
-    public int getAge() {return age;}
-
-    public double getAverageScore() {return averageScore;}
-
-    public Address getAddress() {return address;}
-
-    public Address getFormerAddress() {return formerAddress;}
-
-    public boolean getMember() {return member;}
-
-    public List<String> getRoles() {return roles;}
-
-    public long getRegistrationTimestamp() {return registrationTimestamp;}
-
-    public List<Pet> getPets() {return pets;}
+    private BigDecimal income;
 }

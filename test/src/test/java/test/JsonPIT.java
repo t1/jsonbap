@@ -58,7 +58,7 @@ public class JsonPIT extends AbstractJsonIT {
         if (object.getLastName() != null) {
             out.write("lastName", object.getLastName());
         }
-        out.write("member", object.getMember());
+        out.write("member", object.isMember());
         if (object.getPets() != null) {
             out.writeStartArray("pets");
             for (Pet pet : object.getPets()) {
