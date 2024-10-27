@@ -265,7 +265,7 @@ class JsonbSerializerGeneratorTest {
                             @Override
                             public void serialize(JsonbSerializerGeneratorTest$FormattedNumberContainer object, JsonGenerator out, SerializationContext context) {
                                 out.writeStartObject();
-                                // number format from @jakarta.json.bind.annotation.JsonbNumberFormat(locale="de", value="") annotation on field
+                                // number format from @jakarta.json.bind.annotation.JsonbNumberFormat(locale="de", value="") on com.github.t1.jsonbap.impl.JsonbSerializerGeneratorTest$FormattedNumberContainer#formattedField
                                 context.serialize("formattedField", Optional.ofNullable(object.formattedField)
                                     .map(NumberFormat.getInstance(Locale.of("de"))::format)
                                     .orElse(null), out);

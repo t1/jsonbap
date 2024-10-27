@@ -85,3 +85,16 @@ To do so, specify the processor classes, e.g. for Maven in the `maven-compiler-p
     </configuration>
 </plugin>
 ----
+
+== Logging/Debugging
+
+JSONB-AP generates compiler notifications: e.g. errors, if you did something wrong, or warnings, if you did something suspicious.
+It also generates notes for the most important things it does, e.g. which files it generates.
+
+If you need to see more details, it's generally sufficient to look at the generated source files:
+All the relevant information should be there.
+Some things as plain Java code that you can even debug.
+And some things as comments, e.g. the source of annotations it has picked up to generate the code.
+
+To see what the `jsonbap` is doing in detail, you can add a *`compile`* scope dependency (normally you'd do this only `runtime` scoped) on an implementation of https://www.slf4j.org[slf4j] and set the log level to `DEBUG`.
+E.g. https://logback.qos.ch[logback] logs at debug by default.

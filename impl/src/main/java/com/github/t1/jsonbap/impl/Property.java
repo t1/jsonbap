@@ -1,9 +1,8 @@
 package com.github.t1.jsonbap.impl;
 
 import com.github.t1.exap.generator.TypeGenerator;
-import com.github.t1.exap.insight.AnnotationWrapper;
 import com.github.t1.exap.insight.Elemental;
-import com.github.t1.exap.insight.ElementalAnnotations;
+import com.github.t1.jsonbap.impl.Property.JsonbAnnotations.AnnotationWithSource;
 import jakarta.json.bind.annotation.JsonbNumberFormat;
 import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.annotation.JsonbTransient;
@@ -39,7 +38,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     protected final JsonbapConfig jsonbapConfig;
     protected final TypeConfig typeConfig;
     protected final T elemental;
-    private ElementalAnnotations annotations;
+    private JsonbAnnotations annotations;
 
     @Override public int compareTo(@NonNull Property that) {return COMPARATOR.compare(this, that);}
 
@@ -51,15 +50,15 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     boolean isPublic() {return elemental().isPublic();}
 
-    boolean isJsonbTransient() {return findAnnotation(JsonbTransient.class).isPresent();}
+    boolean isJsonbTransient() {return annotations().jsonbTransient.isPresent();}
 
-    Optional<AnnotationWrapper> jsonbProperty() {return findAnnotation(JsonbProperty.class);}
+    Optional<JsonbProperty> jsonbProperty() {return annotations().jsonbProperty();}
 
-    Optional<AnnotationWrapper> jsonbNumberFormat() {return findAnnotation(JsonbNumberFormat.class);}
+    Optional<AnnotationWithSource<JsonbNumberFormat>> jsonbNumberFormat() {return annotations().jsonbNumberFormat();}
 
-    private Optional<AnnotationWrapper> findAnnotation(Class<? extends Annotation> type) {
-        if (annotations == null) annotations = elemental.annotations();
-        return annotations.get(type);
+    private JsonbAnnotations annotations() {
+        if (annotations == null) annotations = new JsonbAnnotations(elemental);
+        return annotations;
     }
 
     public String name() {
@@ -70,7 +69,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     private Optional<String> annotatedName() {
         return jsonbProperty()
-                .map(an -> an.getStringProperty("value"))
+                .map(JsonbProperty::value)
                 .flatMap(name -> name.isEmpty() ? Optional.empty() : Optional.of(name));
     }
 
@@ -134,20 +133,17 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     }
 
     private void writeComments(StringBuilder out) {
-        if (annotatedName().isPresent()) {
+        if (annotatedName().isPresent())
             writeComment(out, "name from JsonbProperty annotation");
-        } else if (derivedName().isPresent()) {
-            writeComment(out, "name derived from " + propertyType() + " name " +
-                              "with strategy " + typeConfig.propertyNamingStrategy());
-        }
-        jsonbNumberFormat().ifPresent(jsonbNumberFormat ->
-                writeComment(out, "number format from " + jsonbNumberFormat + " annotation on " + propertyType()));
+        else if (derivedName().isPresent())
+            writeComment(out, "name derived from " + propertyType() + " name with strategy " + typeConfig.propertyNamingStrategy());
+        jsonbNumberFormat().ifPresent(jsonbNumberFormat -> writeComment(out, "number format from " + jsonbNumberFormat));
     }
 
     private String full(String valueExpression, TypeGenerator typeGenerator) {
         return jsonbNumberFormat().map(jsonbNumberFormat -> {
             // TODO as the config is static, it should be possible to do the formatting in far better performing inline code
-            var formatter = getFormatterExpression(jsonbNumberFormat, typeGenerator);
+            var formatter = getNumberFormatterExpression(jsonbNumberFormat.annotation, typeGenerator);
             typeGenerator.addImport(Optional.class.getName());
             return "Optional.ofNullable(" + valueExpression + ")\n" +
                    "            .map(" + formatter + "::format)\n" +
@@ -156,26 +152,24 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         }).orElse(valueExpression);
     }
 
-    private static String getFormatterExpression(AnnotationWrapper jsonbNumberFormat, TypeGenerator typeGenerator) {
-        var locale = jsonbNumberFormat.getStringProperty("locale");
-        var format = jsonbNumberFormat.getStringProperty("value");
-        if (JsonbNumberFormat.DEFAULT_LOCALE.equals(locale)) {
-            if (format.isEmpty()) {
+    private static String getNumberFormatterExpression(JsonbNumberFormat format, TypeGenerator typeGenerator) {
+        if (JsonbNumberFormat.DEFAULT_LOCALE.equals(format.locale())) {
+            if (format.value().isEmpty()) { // default
                 typeGenerator.addImport(NumberFormat.class.getName());
                 return "NumberFormat.getInstance()";
             } else {
                 typeGenerator.addImport(DecimalFormat.class.getName());
-                return "new DecimalFormat(\"" + format + "\")";
+                return "new DecimalFormat(\"" + format.value() + "\")";
             }
         } else {
             typeGenerator.addImport(Locale.class.getName());
-            if (format.isEmpty()) {
+            if (format.value().isEmpty()) {
                 typeGenerator.addImport(NumberFormat.class.getName());
-                return "NumberFormat.getInstance(Locale.of(\"" + locale + "\"))";
+                return "NumberFormat.getInstance(Locale.of(\"" + format.locale() + "\"))";
             } else {
                 typeGenerator.addImport(DecimalFormat.class.getName());
                 typeGenerator.addImport(DecimalFormatSymbols.class.getName());
-                return "new DecimalFormat(\"" + format + "\", DecimalFormatSymbols.getInstance(Locale.of(\"" + locale + "\")))";
+                return "new DecimalFormat(\"" + format.value() + "\", DecimalFormatSymbols.getInstance(Locale.of(\"" + format.locale() + "\")))";
             }
         }
     }
@@ -223,4 +217,37 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     protected abstract String valueExpression();
 
     protected void writeName(StringBuilder out) {out.append(name());}
+
+    record JsonbAnnotations(
+            Optional<JsonbTransient> jsonbTransient,
+            Optional<JsonbProperty> jsonbProperty,
+            Optional<AnnotationWithSource<JsonbNumberFormat>> jsonbNumberFormat) {
+
+        /// Derive annotations from this elemental or eventually it's containers.
+        /// Merging between field and getter happens later.
+        JsonbAnnotations(Elemental elemental) {
+            this(
+                    elemental.annotation(JsonbTransient.class),
+                    elemental.annotation(JsonbProperty.class),
+                    findAnnotationSource(elemental, JsonbNumberFormat.class));
+        }
+
+        private static <A extends Annotation> Optional<AnnotationWithSource<A>> findAnnotationSource(Elemental elemental, @SuppressWarnings("SameParameterValue") Class<A> type) {
+            for (var e = elemental; e != null; e = e.enclosingElement().orElse(null)) {
+                if (e.isAnnotated(type)) return Optional.of(new AnnotationWithSource<>(e.getAnnotation(type), e));
+            }
+            return Optional.empty();
+        }
+
+        JsonbAnnotations merge(JsonbAnnotations that) {
+            return new JsonbAnnotations(
+                    this.jsonbTransient.or(that::jsonbTransient),
+                    this.jsonbProperty.or(that::jsonbProperty),
+                    this.jsonbNumberFormat.or(that::jsonbNumberFormat));
+        }
+
+        record AnnotationWithSource<A extends Annotation>(A annotation, Elemental source) {
+            @Override public String toString() {return annotation + " on " + source;}
+        }
+    }
 }
