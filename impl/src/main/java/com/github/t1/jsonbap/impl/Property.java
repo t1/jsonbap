@@ -11,6 +11,7 @@ import jakarta.json.bind.serializer.SerializationContext;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+import java.lang.annotation.Annotation;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -38,7 +39,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     protected final JsonbapConfig jsonbapConfig;
     protected final TypeConfig typeConfig;
     protected final T elemental;
-    private final ElementalAnnotations annotations;
+    private ElementalAnnotations annotations;
 
     @Override public int compareTo(@NonNull Property that) {return COMPARATOR.compare(this, that);}
 
@@ -50,11 +51,16 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     boolean isPublic() {return elemental().isPublic();}
 
-    boolean isJsonbTransient() {return annotations.contains(JsonbTransient.class);}
+    boolean isJsonbTransient() {return findAnnotation(JsonbTransient.class).isPresent();}
 
-    Optional<AnnotationWrapper> jsonbProperty() {return annotations.get(JsonbProperty.class);}
+    Optional<AnnotationWrapper> jsonbProperty() {return findAnnotation(JsonbProperty.class);}
 
-    Optional<AnnotationWrapper> jsonbNumberFormat() {return annotations.get(JsonbNumberFormat.class);}
+    Optional<AnnotationWrapper> jsonbNumberFormat() {return findAnnotation(JsonbNumberFormat.class);}
+
+    private Optional<AnnotationWrapper> findAnnotation(Class<? extends Annotation> type) {
+        if (annotations == null) annotations = elemental.annotations();
+        return annotations.get(type);
+    }
 
     public String name() {
         return annotatedName()
@@ -85,15 +91,6 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     protected String rawName() {return elemental().name();}
 
-    public Property<?> merge(Property<?> that) {
-        elemental.note("merge " + this + " and " + that);
-        var optionalBase = this.or(that);
-        if (optionalBase.isOr()) return null;
-        var base = optionalBase.get();
-        var other = (base == this) ? that : this;
-        return base.withAnnotations(base.annotations.merge(other.annotations));
-    }
-
     /// The algorithm is described [here](https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0#scope-and-field-access-strategy).
     ///
     /// For a serialization operation, if a matching public getter method exists,
@@ -102,7 +99,15 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     /// then this field is ignored.
     /// If no matching getter method exists and the field is public,
     /// then the value is obtained directly from the field.
-    protected abstract Property<?> withAnnotations(@NonNull ElementalAnnotations annotations);
+    public Property<?> merge(Property<?> that) {
+        elemental.note("merge " + this + " and " + that);
+        var optionalBase = this.or(that);
+        if (optionalBase.isOr()) return null;
+        var base = optionalBase.get();
+        var other = (base == this) ? that : this;
+        base.annotations = base.annotations.merge(other.annotations);
+        return base;
+    }
 
     protected abstract <V extends Property<?>> Either<V, String> or(V that);
 

@@ -1,10 +1,8 @@
 package com.github.t1.jsonbap.impl;
 
-import com.github.t1.exap.insight.ElementalAnnotations;
 import com.github.t1.exap.insight.Method;
 import com.github.t1.exap.insight.Type;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.experimental.Accessors;
 
 import java.util.stream.Stream;
@@ -14,7 +12,7 @@ class GetterProperty extends Property<Method> {
     static Stream<Property<Method>> getterProperties(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, Type type) {
         return type.getAllMethods().stream()
                 .filter(GetterProperty::isGetter)
-                .map(method -> new GetterProperty(jsonbapConfig, typeConfig, method, method.annotations(), rawName(method)));
+                .map(method -> new GetterProperty(jsonbapConfig, typeConfig, method, rawName(method)));
     }
 
     private static boolean isGetter(Method method) {
@@ -46,13 +44,9 @@ class GetterProperty extends Property<Method> {
 
     private final String rawName;
 
-    private GetterProperty(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, Method getter, ElementalAnnotations annotations, String rawName) {
-        super(jsonbapConfig, typeConfig, getter, annotations);
+    private GetterProperty(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, Method getter, String rawName) {
+        super(jsonbapConfig, typeConfig, getter);
         this.rawName = rawName;
-    }
-
-    @Override protected Property<?> withAnnotations(@NonNull ElementalAnnotations annotations) {
-        return new GetterProperty(this.jsonbapConfig, this.typeConfig, this.elemental, annotations, this.rawName);
     }
 
     @Override protected String propertyType() {return "getter";}

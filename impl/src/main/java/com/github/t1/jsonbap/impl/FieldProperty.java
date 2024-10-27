@@ -1,6 +1,5 @@
 package com.github.t1.jsonbap.impl;
 
-import com.github.t1.exap.insight.ElementalAnnotations;
 import com.github.t1.exap.insight.Field;
 import com.github.t1.exap.insight.Type;
 import lombok.NonNull;
@@ -13,15 +12,11 @@ class FieldProperty extends Property<Field> {
             @NonNull TypeConfig typeConfig,
             @NonNull Type type) {
         return type.getAllFields().stream()
-                .map(field -> new FieldProperty(jsonbapConfig, typeConfig, field, field.annotations()));
+                .map(field -> new FieldProperty(jsonbapConfig, typeConfig, field));
     }
 
-    private FieldProperty(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, Field field, ElementalAnnotations annotations) {
-        super(jsonbapConfig, typeConfig, field, annotations);
-    }
-
-    @Override protected Property<?> withAnnotations(@NonNull ElementalAnnotations annotations) {
-        return new FieldProperty(this.jsonbapConfig, this.typeConfig, this.elemental, annotations);
+    private FieldProperty(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, Field field) {
+        super(jsonbapConfig, typeConfig, field);
     }
 
     @Override protected String propertyType() {return "field";}
