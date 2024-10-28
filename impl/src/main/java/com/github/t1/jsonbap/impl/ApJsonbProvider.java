@@ -1,33 +1,33 @@
 package com.github.t1.jsonbap.impl;
 
-import com.github.t1.jsonbap.impl.writers.Array$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.BigDecimal$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.BigInteger$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.Boolean$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.BooleanArray$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.Byte$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.ByteArray$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.CharArray$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.Character$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.Double$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.DoubleArray$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.Float$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.FloatArray$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.IntArray$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.Integer$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.Iterable$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.JsonValue$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.Long$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.LongArray$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.Null$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.Optional$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.OptionalDouble$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.OptionalInt$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.OptionalLong$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.Short$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.ShortArray$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.String$$JsonbSerializer;
-import com.github.t1.jsonbap.impl.writers.ToStringSerializer;
+import com.github.t1.jsonbap.impl.serializers.Array$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.BigDecimal$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.BigInteger$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.Boolean$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.BooleanArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.Byte$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.ByteArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.CharArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.Character$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.Double$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.DoubleArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.Float$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.FloatArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.IntArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.Integer$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.Iterable$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.JsonValue$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.Long$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.LongArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.Null$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.Optional$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.OptionalDouble$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.OptionalInt$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.OptionalLong$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.Short$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.ShortArray$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.String$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.ToStringSerializer;
 import jakarta.json.JsonValue;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
@@ -75,9 +75,11 @@ public class ApJsonbProvider extends JsonbProvider {
             SERIALIZERS.put(List.class, new Iterable$$JsonbSerializer());
             SERIALIZERS.put(ArrayList.class, new Iterable$$JsonbSerializer());
             SERIALIZERS.put(LinkedList.class, new Iterable$$JsonbSerializer());
-            // TODO automatically add all instances of e.g. Iterable in #loadWriterFor (no new instance necessary)
+            // TODO automatically add all instances of e.g. Iterable in #loadSerializerFor (no new instance necessary)
 
+            // TODO add all other collections from ImmutableCollections and Collections
             SERIALIZERS.put(Class.forName("java.util.ImmutableCollections$List12"), new Iterable$$JsonbSerializer());
+            SERIALIZERS.put(Class.forName("java.util.ImmutableCollections$ListN"), new Iterable$$JsonbSerializer());
             SERIALIZERS.put(Class.forName("java.util.Collections$UnmodifiableRandomAccessList"), new Iterable$$JsonbSerializer());
             SERIALIZERS.put(Class.forName("java.util.Arrays$ArrayList"), new Iterable$$JsonbSerializer());
 
@@ -93,13 +95,15 @@ public class ApJsonbProvider extends JsonbProvider {
             SERIALIZERS.put(OffsetDateTime.class, new ToStringSerializer<>());
             SERIALIZERS.put(OffsetTime.class, new ToStringSerializer<>());
             SERIALIZERS.put(Period.class, new ToStringSerializer<>());
+            SERIALIZERS.put(SimpleTimeZone.class, new ToStringSerializer<>());
             SERIALIZERS.put(ZonedDateTime.class, new ToStringSerializer<>());
             SERIALIZERS.put(ZoneOffset.class, new ToStringSerializer<>());
-            SERIALIZERS.put(Class.forName("sun.util.calendar.ZoneInfo"), new ToStringSerializer<>());
             SERIALIZERS.put(Class.forName("java.time.ZoneRegion"), new ToStringSerializer<>());
-            SERIALIZERS.put(Class.forName("java.util.Date"), new ToStringSerializer<>());
-            SERIALIZERS.put(SimpleTimeZone.class, new ToStringSerializer<>());
+
+            // old date/time types
+            SERIALIZERS.put(java.util.Date.class, new ToStringSerializer<>());
             SERIALIZERS.put(GregorianCalendar.class, new ToStringSerializer<>());
+            SERIALIZERS.put(Class.forName("sun.util.calendar.ZoneInfo"), new ToStringSerializer<>());
 
             // ---------- Types directly supported by JsonGenerator:
             SERIALIZERS.put(JsonValue.class, new JsonValue$$JsonbSerializer());
@@ -126,14 +130,14 @@ public class ApJsonbProvider extends JsonbProvider {
     @SuppressWarnings("unchecked")
     public static <T> JsonbSerializer<T> serializerFor(Type type) {
         return (JsonbSerializer<T>) ((type == null) ? Null$$JsonbSerializer.INSTANCE :
-                SERIALIZERS.computeIfAbsent(type, ApJsonbProvider::loadWriterFor));
+                SERIALIZERS.computeIfAbsent(type, ApJsonbProvider::loadSerializerFor));
     }
 
     static Type typeOf(Object object) {
         return (object == null) ? null : object.getClass();
     }
 
-    private static JsonbSerializer<?> loadWriterFor(Type type) {
+    private static JsonbSerializer<?> loadSerializerFor(Type type) {
         if (type instanceof Class<?> c && JsonValue.class.isAssignableFrom(c)) {
             return new JsonValue$$JsonbSerializer();
         }
@@ -152,7 +156,7 @@ public class ApJsonbProvider extends JsonbProvider {
             Class<?> serializerClass = Class.forName(nonGenericTypeName(type) + "$$JsonbSerializer");
             return (JsonbSerializer<?>) serializerClass.getConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("can't create instance of jsonb writer for " + type, e);
+            throw new RuntimeException("can't create instance of jsonb serializer for " + type, e);
         }
     }
 

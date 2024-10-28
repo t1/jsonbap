@@ -4,6 +4,8 @@ import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.Elemental;
 import com.github.t1.exap.insight.ElementalKind;
 import com.github.t1.jsonbap.impl.Property.JsonbAnnotations.AnnotationWithSource;
+import com.github.t1.jsonbap.runtime.NullWriter;
+import jakarta.json.bind.annotation.JsonbNillable;
 import jakarta.json.bind.annotation.JsonbNumberFormat;
 import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.annotation.JsonbTransient;
@@ -53,6 +55,21 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     boolean isPublic() {return elemental().isPublic();}
 
     boolean isTransient() {return elemental.isTransient() || annotations().jsonbTransient.isPresent();}
+
+    /// annotated as `@JsonbNillable(false)`, i.e. ignore the `nillable` property of the `JsonbProperty` annotation,
+    /// as well as the configuration of the context
+    Boolean isNillableFalse() {
+        return annotations().jsonbNillable.map(nillable -> !nillable.annotation.value()).orElse(false);
+    }
+
+    /// annotated as `@JsonbNillable(true)` or with the deprecated `nillable` property of the `JsonbProperty` annotation.
+    /// this ignores the configuration of the context.
+    @SuppressWarnings("deprecation")
+    boolean isNillable() {
+        return annotations().jsonbNillable.map(nillable -> nillable.annotation.value())
+                .or(() -> annotations().jsonbProperty.map(property -> property.annotation.nillable()))
+                .orElse(false);
+    }
 
     Optional<AnnotationWithSource<JsonbNumberFormat>> jsonbNumberFormat() {return annotations().jsonbNumberFormat();}
 
@@ -111,125 +128,36 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     protected abstract <V extends Property<?>> Either<V, String> or(V that);
 
-    final void write(TypeGenerator typeGenerator, StringBuilder out) {
-        if (isTransient()) {
-            var transientMessage = this + " is transient" + annotations().jsonbTransient.map(a -> " from " + a).orElse("");
-            writeComment(out, transientMessage);
-            annotations().all().filter(a -> !(a.isA(JsonbTransient.class))).findAny().ifPresent(a ->
-                    jsonbException(typeGenerator, out, transientMessage + " but also annotated " + a));
-        } else if (!elemental.isPublic()) {
-            writeComment(out, this + " is not public");
-        } else if (PRIMITIVE_TYPES.contains(typeName()) && jsonbNumberFormat().isEmpty()) {
-            writeComments(out);
-            writeDirect(valueExpression(), out);
-        } else {
-            writeComments(out);
-            writeViaContext(full(valueExpression(), typeGenerator), out);
-        }
-    }
+    final void write(TypeGenerator typeGenerator, StringBuilder out) {new PropertyWriter(typeGenerator, out).write();}
 
-    private void writeComments(StringBuilder out) {
-        if (annotatedName().isPresent())
-            writeComment(out, "name from JsonbProperty annotation");
-        else if (derivedName().isPresent())
-            writeComment(out, "name derived from " + propertyType() + " name with strategy " + typeConfig.propertyNamingStrategy());
-        jsonbNumberFormat().ifPresent(jsonbNumberFormat -> writeComment(out, "number format from " + jsonbNumberFormat));
-    }
-
-    private String full(String valueExpression, TypeGenerator typeGenerator) {
-        return jsonbNumberFormat().map(jsonbNumberFormat -> {
-            // TODO as the config is static, it should be possible to do the formatting in far better performing inline code
-            var formatter = getNumberFormatterExpression(jsonbNumberFormat.annotation, typeGenerator);
-            typeGenerator.addImport(Optional.class.getName());
-            return "Optional.ofNullable(" + valueExpression + ")\n" +
-                   "            .map(" + formatter + "::format)\n" +
-                   frenchNnbspWorkaround() +
-                   "            .orElse(null)";
-        }).orElse(valueExpression);
-    }
-
-    private static String getNumberFormatterExpression(JsonbNumberFormat format, TypeGenerator typeGenerator) {
-        if (JsonbNumberFormat.DEFAULT_LOCALE.equals(format.locale())) {
-            if (format.value().isEmpty()) { // default
-                typeGenerator.addImport(NumberFormat.class.getName());
-                return "NumberFormat.getInstance()";
-            } else {
-                typeGenerator.addImport(DecimalFormat.class.getName());
-                return "new DecimalFormat(\"" + format.value() + "\")";
-            }
-        } else {
-            typeGenerator.addImport(Locale.class.getName());
-            if (format.value().isEmpty()) {
-                typeGenerator.addImport(NumberFormat.class.getName());
-                return "NumberFormat.getInstance(Locale.of(\"" + format.locale() + "\"))";
-            } else {
-                typeGenerator.addImport(DecimalFormat.class.getName());
-                typeGenerator.addImport(DecimalFormatSymbols.class.getName());
-                return "new DecimalFormat(\"" + format.value() + "\", DecimalFormatSymbols.getInstance(Locale.of(\"" + format.locale() + "\")))";
-            }
-        }
-    }
-
-    private String frenchNnbspWorkaround() {
-        return jsonbapConfig.frenchNnbspWorkaround() ? "            .map(f -> f.replace('\\u202f', '\\u00a0'))\n" : "";
-    }
-
-    protected void jsonbException(TypeGenerator typeGenerator, StringBuilder out, String message) {
-        typeGenerator.addImport("jakarta.json.bind.JsonbException");
-        // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
-        out.append("        if (true) throw new JsonbException(\"").append(message.replace("\"", "\\\"")).append("\");\n");
-
-        if (jsonbapConfig.throwJsonbExceptionsAtRuntime()) {
-            elemental.warning(message);
-        } else {
-            elemental.error(message);
-        }
-    }
-
-    protected void writeComment(StringBuilder out, String message) {out.append("        // ").append(message).append("\n");}
-
-    /**
-     * Append the code required to serialize a primitive and non-nullable JSON key-value pair
-     * directly to the {@link jakarta.json.stream.JsonGenerator generator}
-     */
-    private void writeDirect(String valueExpression, StringBuilder out) {
-        out.append("        out.write(\"");
-        writeName(out);
-        out.append("\", ").append(valueExpression).append(");\n");
-    }
-
-    /**
-     * Append the code required to serialize a potentially nullable or complex JSON key-value pair,
-     * with the indirection of the {@link SerializationContext context}, which may, or may not,
-     * write a <code>null</code> value.
-     */
-    private void writeViaContext(String valueExpression, StringBuilder out) {
-        out.append("        context.serialize(\"");
-        writeName(out);
-        out.append("\", ").append(valueExpression).append(", out);\n");
-    }
 
     protected abstract String typeName();
 
     protected abstract String valueExpression();
 
-    protected void writeName(StringBuilder out) {out.append(name());}
-
     record JsonbAnnotations(
             Optional<AnnotationWithSource<JsonbTransient>> jsonbTransient,
             Optional<AnnotationWithSource<JsonbProperty>> jsonbProperty,
-            Optional<AnnotationWithSource<JsonbNumberFormat>> jsonbNumberFormat) {
+            Optional<AnnotationWithSource<JsonbNumberFormat>> jsonbNumberFormat,
+            Optional<AnnotationWithSource<JsonbNillable>> jsonbNillable) {
 
         /// Derive annotations from this elemental or eventually it's containers.
         /// Merging between field and getter happens later.
         JsonbAnnotations(Elemental elemental) {
             this(
-                    findAnnotationSource(elemental, JsonbTransient.class),
-                    findAnnotationSource(elemental, JsonbProperty.class),
-                    findAnnotationSource(elemental, JsonbNumberFormat.class));
+                    get(JsonbTransient.class, elemental),
+                    get(JsonbProperty.class, elemental),
+                    find(JsonbNumberFormat.class, elemental),
+                    find(JsonbNillable.class, elemental));
         }
 
-        private static <A extends Annotation> Optional<AnnotationWithSource<A>> findAnnotationSource(Elemental elemental, @SuppressWarnings("SameParameterValue") Class<A> type) {
+        /// annotation directly on the field or getter
+        private static <A extends Annotation> Optional<AnnotationWithSource<A>> get(Class<A> type, Elemental elemental) {
+            return elemental.annotation(type).map(a -> new AnnotationWithSource<>(a, elemental));
+        }
+
+        /// annotation on the field or getter or any of its containers
+        private static <A extends Annotation> Optional<AnnotationWithSource<A>> find(Class<A> type, Elemental elemental) {
             for (var e = elemental; e != null; e = e.enclosingElement().orElse(null)) {
                 if (e.isAnnotated(type)) return Optional.of(new AnnotationWithSource<>(e.getAnnotation(type), e));
             }
@@ -237,7 +165,11 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         }
 
         Stream<AnnotationWithSource<?>> all() {
-            return Stream.of(jsonbTransient, jsonbProperty, jsonbNumberFormat)
+            return Stream.of(
+                            jsonbTransient,
+                            jsonbProperty,
+                            jsonbNumberFormat,
+                            jsonbNillable)
                     .flatMap(Optional::stream);
         }
 
@@ -245,7 +177,8 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             return new JsonbAnnotations(
                     this.jsonbTransient.or(that::jsonbTransient),
                     this.jsonbProperty.or(that::jsonbProperty),
-                    sorted(this.jsonbNumberFormat, that.jsonbNumberFormat));
+                    sorted(this.jsonbNumberFormat, that.jsonbNumberFormat),
+                    sorted(this.jsonbNillable, that.jsonbNillable));
         }
 
         /// Find the most specific annotations, i.e. the ones closest to the field or getter.
@@ -264,5 +197,127 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
             public boolean isA(Class<?> type) {return type.isInstance(annotation);}
         }
+    }
+
+    @RequiredArgsConstructor
+    private class PropertyWriter {
+        private final TypeGenerator typeGenerator;
+        private final StringBuilder out;
+
+        public void write() {
+            if (isTransient()) {
+                var transientMessage = Property.this + " is transient" + annotations().jsonbTransient.map(a -> " from " + a).orElse("");
+                writeComment(transientMessage);
+                annotations().all().filter(a -> !(a.isA(JsonbTransient.class))).findAny().ifPresent(a ->
+                        jsonbException(transientMessage + " but also annotated " + a));
+            } else if (!isPublic()) {
+                writeComment(this + " is not public");
+            } else {
+                writeField();
+            }
+        }
+
+        private void writeField() {
+            if (annotatedName().isPresent())
+                writeComment("name from JsonbProperty annotation");
+            else if (derivedName().isPresent())
+                writeComment("name derived from " + propertyType() + " name with strategy " + typeConfig.propertyNamingStrategy());
+
+            if (PRIMITIVE_TYPES.contains(typeName()) && jsonbNumberFormat().isEmpty()) {
+                writeDirect(valueExpression());
+            } else {
+                jsonbNumberFormat().ifPresent(jsonbNumberFormat -> writeComment("number format from " + jsonbNumberFormat));
+
+                var valueExpression = formatted(valueExpression());
+                if (isNillableFalse()) {
+                    writeViaNullWriter(valueExpression, "writeNullable");
+                } else if (isNillable()) {
+                    writeViaNullWriter(valueExpression, "writeNillable");
+                } else {
+                    writeViaContext(valueExpression);
+                }
+            }
+        }
+
+        private void writeComment(String message) {out.append("        // ").append(message).append("\n");}
+
+        /**
+         * Append the code required to serialize a primitive and non-nullable JSON key-value pair
+         * directly to the {@link jakarta.json.stream.JsonGenerator generator}
+         */
+        private void writeDirect(String valueExpression) {
+            out.append("        out.write(\"");
+            writeName();
+            out.append("\", ").append(valueExpression).append(");\n");
+        }
+
+        private void writeViaNullWriter(String valueExpression, String methodName) {
+            typeGenerator.addImport(NullWriter.class.getName());
+            out.append("        NullWriter.").append(methodName).append("(\"").append(name()).append("\", ")
+                    .append(valueExpression).append(", out, context);\n");
+        }
+
+        private String formatted(String valueExpression) {
+            return jsonbNumberFormat().map(jsonbNumberFormat -> {
+                // TODO as the config is static, it should be possible to do the formatting in far better performing inline code
+                var formatter = getNumberFormatterExpression(jsonbNumberFormat.annotation);
+                typeGenerator.addImport(Optional.class.getName());
+                return "Optional.ofNullable(" + valueExpression + ")\n" +
+                       "            .map(" + formatter + "::format)\n" +
+                       frenchNnbspWorkaround() +
+                       "            .orElse(null)";
+            }).orElse(valueExpression);
+        }
+
+        private String getNumberFormatterExpression(JsonbNumberFormat format) {
+            if (JsonbNumberFormat.DEFAULT_LOCALE.equals(format.locale())) {
+                if (format.value().isEmpty()) { // default
+                    typeGenerator.addImport(NumberFormat.class.getName());
+                    return "NumberFormat.getInstance()";
+                } else {
+                    typeGenerator.addImport(DecimalFormat.class.getName());
+                    return "new DecimalFormat(\"" + format.value() + "\")";
+                }
+            } else {
+                typeGenerator.addImport(Locale.class.getName());
+                if (format.value().isEmpty()) {
+                    typeGenerator.addImport(NumberFormat.class.getName());
+                    return "NumberFormat.getInstance(Locale.of(\"" + format.locale() + "\"))";
+                } else {
+                    typeGenerator.addImport(DecimalFormat.class.getName());
+                    typeGenerator.addImport(DecimalFormatSymbols.class.getName());
+                    return "new DecimalFormat(\"" + format.value() + "\", DecimalFormatSymbols.getInstance(Locale.of(\"" + format.locale() + "\")))";
+                }
+            }
+        }
+
+        private String frenchNnbspWorkaround() {
+            return jsonbapConfig.frenchNnbspWorkaround() ? "            .map(f -> f.replace('\\u202f', '\\u00a0'))\n" : "";
+        }
+
+        private void jsonbException(String message) {
+            typeGenerator.addImport("jakarta.json.bind.JsonbException");
+            // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
+            out.append("        if (true) throw new JsonbException(\"").append(message.replace("\"", "\\\"")).append("\");\n");
+
+            if (jsonbapConfig.throwJsonbExceptionsAtRuntime()) {
+                elemental.warning("THIS IS NORMALLY A COMPILE ERROR: " + message);
+            } else {
+                elemental.error(message);
+            }
+        }
+
+        /**
+         * Append the code required to serialize a potentially nullable or complex JSON key-value pair,
+         * with the indirection of the {@link SerializationContext context}, which may, or may not,
+         * write a <code>null</code> value.
+         */
+        private void writeViaContext(String valueExpression) {
+            out.append("        context.serialize(\"");
+            writeName();
+            out.append("\", ").append(valueExpression).append(", out);\n");
+        }
+
+        private void writeName() {out.append(name());}
     }
 }

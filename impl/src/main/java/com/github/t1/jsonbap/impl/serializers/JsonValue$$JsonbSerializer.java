@@ -1,4 +1,4 @@
-package com.github.t1.jsonbap.impl.writers;
+package com.github.t1.jsonbap.impl.serializers;
 
 import jakarta.json.JsonValue;
 import jakarta.json.bind.serializer.JsonbSerializer;

@@ -1,6 +1,6 @@
 package com.github.t1.jsonbap.impl;
 
-import com.github.t1.jsonbap.api.NullAwareSerializer;
+import com.github.t1.jsonbap.runtime.NullWriter;
 import jakarta.json.bind.JsonbConfig;
 import jakarta.json.bind.serializer.SerializationContext;
 import jakarta.json.stream.JsonGenerator;
@@ -19,34 +19,24 @@ record JsonGeneratorContext(boolean writeNullValues) implements SerializationCon
     }
 
     @Override public <T> void serialize(String key, T object, JsonGenerator generator) {
-        if (object == null) {
+        var serializer = ApJsonbProvider.serializerFor(object);
+        if (NullWriter.isNull(serializer, object)) {
             if (writeNullValues) {
                 generator.writeNull(key);
             }
         } else {
-            var serializer = ApJsonbProvider.serializerFor(object);
-            // TODO And can we merge that with the == null above... and with the other writeNull in the next method?
-            //noinspection rawtypes,unchecked // it seems to be impossible to make this type-safe
-            if (serializer instanceof NullAwareSerializer nullAware && nullAware.isNull(object)) {
-                if (writeNullValues) {
-                    // TODO something is wrong here: why write key _and_ null?
-                    generator.writeKey(key);
-                    generator.writeNull(key);
-                }
-            } else {
-                generator.writeKey(key);
-                serializer.serialize(object, generator, this);
-            }
+            generator.writeKey(key);
+            serializer.serialize(object, generator, this);
         }
     }
 
     @Override public <T> void serialize(T object, JsonGenerator generator) {
-        if (object == null) {
+        var serializer = ApJsonbProvider.serializerFor(object);
+        if (NullWriter.isNull(serializer, object)) {
             if (writeNullValues) {
                 generator.writeNull();
             }
         } else {
-            var serializer = ApJsonbProvider.serializerFor(object);
             serializer.serialize(object, generator, this);
         }
     }

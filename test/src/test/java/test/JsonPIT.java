@@ -1,5 +1,6 @@
 package test;
 
+import com.github.t1.jsonbap.runtime.NullWriter;
 import com.github.t1.jsonbap.test.Address;
 import com.github.t1.jsonbap.test.Cat;
 import com.github.t1.jsonbap.test.Dog;
@@ -7,12 +8,15 @@ import com.github.t1.jsonbap.test.Person;
 import com.github.t1.jsonbap.test.Pet;
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
+import org.junit.jupiter.api.Test;
 
 import java.io.StringWriter;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+
+import static org.assertj.core.api.BDDAssertions.then;
 
 public class JsonPIT extends AbstractJsonIT {
     @Override String toJson(Object object) {
@@ -123,5 +127,27 @@ public class JsonPIT extends AbstractJsonIT {
             out.write("name", object.getName());
         }
         out.writeEnd();
+    }
+
+    @Test
+    void shouldSerializeNil() {
+        var person = Person.builder()
+                .firstName("Jane")
+                .lastName(null)
+                .build();
+
+        var json = new StringWriter();
+        try (var out = Json.createGenerator(json)) {
+            out.writeStartObject();
+            NullWriter.writeNillable("firstName", person.getFirstName(), out, null);
+            NullWriter.writeNillable("lastName", person.getLastName(), out, null);
+            out.writeEnd();
+        }
+
+        then(json.toString()).isEqualTo(
+                "{" +
+                "\"firstName\":\"Jane\"," +
+                "\"lastName\":null" +
+                "}");
     }
 }

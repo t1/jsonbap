@@ -3,10 +3,13 @@ package test;
 import com.github.t1.jsonbap.api.Bindable;
 import com.github.t1.jsonbap.impl.ApJsonbProvider;
 import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.annotation.JsonbNillable;
 import jakarta.json.bind.spi.JsonbProvider;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.CASE_INSENSITIVE;
 import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.LOWER_CASE_WITH_DASHES;
@@ -17,6 +20,7 @@ import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.UPPE
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.BDDAssertions.then;
+import static test.JsonbIT.TestConfig.FORMATTING;
 
 public class JsonbapIT extends JsonbIT {
     // this extra effort is for the performance when doing performance tests: we want every variant to be initiated only once
@@ -26,6 +30,14 @@ public class JsonbapIT extends JsonbIT {
 
     @Override protected Jsonb jsonb(TestConfig testConfig) {return JSONB_MAP.get(testConfig);}
 
+
+    @Bindable(propertyNamingStrategy = LOWER_CASE_WITH_DASHES)
+    @SuppressWarnings("unused")
+    public static class KebabCaseType {
+        public String getFirstName() {return "first";}
+
+        public String lastName = "last";
+    }
 
     @Test void shouldSerializeWithKebabCase() throws Exception {
         try (var jsonb = jsonb()) {
@@ -40,14 +52,14 @@ public class JsonbapIT extends JsonbIT {
         }
     }
 
-    @Bindable(propertyNamingStrategy = LOWER_CASE_WITH_DASHES)
+
+    @Bindable(propertyNamingStrategy = LOWER_CASE_WITH_UNDERSCORES)
     @SuppressWarnings("unused")
-    public static class KebabCaseType {
+    public static class LowerSnakeCaseType {
         public String getFirstName() {return "first";}
 
         public String lastName = "last";
     }
-
 
     @Test void shouldSerializeWithLowerSnakeCase() throws Exception {
         try (var jsonb = jsonb()) {
@@ -62,14 +74,14 @@ public class JsonbapIT extends JsonbIT {
         }
     }
 
-    @Bindable(propertyNamingStrategy = LOWER_CASE_WITH_UNDERSCORES)
+
+    @Bindable(propertyNamingStrategy = UPPER_CASE_WITH_UNDERSCORES)
     @SuppressWarnings("unused")
-    public static class LowerSnakeCaseType {
+    public static class UpperSnakeCaseType {
         public String getFirstName() {return "first";}
 
         public String lastName = "last";
     }
-
 
     @Test void shouldSerializeWithUpperSnakeCase() throws Exception {
         try (var jsonb = jsonb()) {
@@ -84,14 +96,14 @@ public class JsonbapIT extends JsonbIT {
         }
     }
 
-    @Bindable(propertyNamingStrategy = UPPER_CASE_WITH_UNDERSCORES)
+
+    @Bindable(propertyNamingStrategy = UPPER_CAMEL_CASE)
     @SuppressWarnings("unused")
-    public static class UpperSnakeCaseType {
+    public static class UpperCamelCaseType {
         public String getFirstName() {return "first";}
 
         public String lastName = "last";
     }
-
 
     @Test void shouldSerializeWithUpperCamelCase() throws Exception {
         try (var jsonb = jsonb()) {
@@ -106,14 +118,14 @@ public class JsonbapIT extends JsonbIT {
         }
     }
 
-    @Bindable(propertyNamingStrategy = UPPER_CAMEL_CASE)
+
+    @Bindable(propertyNamingStrategy = UPPER_CAMEL_CASE_WITH_SPACES)
     @SuppressWarnings("unused")
-    public static class UpperCamelCaseType {
+    public static class TitleCaseType {
         public String getFirstName() {return "first";}
 
         public String lastName = "last";
     }
-
 
     @Test void shouldSerializeWithTitleCase() throws Exception {
         try (var jsonb = jsonb()) {
@@ -128,14 +140,14 @@ public class JsonbapIT extends JsonbIT {
         }
     }
 
-    @Bindable(propertyNamingStrategy = UPPER_CAMEL_CASE_WITH_SPACES)
+
+    @Bindable(propertyNamingStrategy = CASE_INSENSITIVE)
     @SuppressWarnings("unused")
-    public static class TitleCaseType {
+    public static class CaseInsensitiveType {
         public String getFirstName() {return "first";}
 
         public String lastName = "last";
     }
-
 
     @Test void shouldSerializeWithCaseInsensitive() throws Exception {
         try (var jsonb = jsonb()) {
@@ -150,11 +162,44 @@ public class JsonbapIT extends JsonbIT {
         }
     }
 
-    @Bindable(propertyNamingStrategy = CASE_INSENSITIVE)
-    @SuppressWarnings("unused")
-    public static class CaseInsensitiveType {
-        public String getFirstName() {return "first";}
 
-        public String lastName = "last";
+    @Test void shouldSerializeOptionalList() throws Exception {
+        try (var jsonb = jsonb()) {
+
+            var json = jsonb.toJson(List.of(
+                    Optional.of("one"),
+                    Optional.empty(),
+                    Optional.of("three")));
+
+            then(json).isEqualTo("""
+                    [
+                        "one",
+                        null,
+                        "three"
+                    ]""");
+        }
+    }
+
+
+    @Bindable
+    @SuppressWarnings("unused")
+    @JsonbNillable
+    public static class NillableType {
+        public String getFirstName() {return null;}
+
+        public String lastName = null;
+    }
+
+    @Test void shouldSerializeNillable() throws Exception {
+        try (var jsonb = jsonb(FORMATTING)) {
+
+            var json = jsonb.toJson(new NillableType());
+
+            then(json).isEqualTo("""
+                    {
+                        "firstName": null,
+                        "lastName": null
+                    }""");
+        }
     }
 }

@@ -9,11 +9,11 @@ import com.github.t1.jsonbap.api.Bindable;
 
 @SupportedAnnotationClasses({Bindable.class})
 public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
-    private JsonbapConfig context;
+    private JsonbapConfig config;
 
     @Override public boolean process(Round round) {
-        this.context = new JsonbapConfig(processingEnv);
-        note("processor context " + context);
+        this.config = new JsonbapConfig(processingEnv);
+        if (round.number() == 0) note("jsonbap config " + config);
         round.typesAnnotatedWith(Bindable.class).forEach(this::process);
         return false;
     }
@@ -29,7 +29,7 @@ public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
     }
 
     private void generateSerializerFor(Type type) {
-        var generator = new JsonbSerializerGenerator(context, type);
+        var generator = new JsonbSerializerGenerator(config, type);
         type.note("generate " + generator.className());
         try (var typeGenerator = type.getPackage().openTypeGenerator(generator.className())) {
             generator.generate(typeGenerator);
