@@ -126,7 +126,7 @@
                 <version>3.5.1</version>
                 <configuration>
                     <!--The Locale that the TCK assumes:-->
-                    <argLine>-Duser.language=en -Duser.country=US</argLine>
+                    <argLine>-Duser.language=en -Duser.country=US -Duser.timezone=UTC</argLine>
                     <trimStackTrace>false</trimStackTrace>
                     <failIfNoTests>true</failIfNoTests>
                     <dependenciesToScan>jakarta.json.bind:jakarta.json.bind-tck</dependenciesToScan>

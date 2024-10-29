@@ -4,7 +4,9 @@ import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.Elemental;
 import com.github.t1.exap.insight.ElementalKind;
 import com.github.t1.jsonbap.impl.Property.JsonbAnnotations.AnnotationWithSource;
+import com.github.t1.jsonbap.runtime.DateTimeWriter;
 import com.github.t1.jsonbap.runtime.NullWriter;
+import jakarta.json.bind.annotation.JsonbDateFormat;
 import jakarta.json.bind.annotation.JsonbNillable;
 import jakarta.json.bind.annotation.JsonbNumberFormat;
 import jakarta.json.bind.annotation.JsonbProperty;
@@ -73,6 +75,8 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     Optional<AnnotationWithSource<JsonbNumberFormat>> jsonbNumberFormat() {return annotations().jsonbNumberFormat();}
 
+    Optional<AnnotationWithSource<JsonbDateFormat>> jsonbDateFormat() {return annotations().jsonbDateFormat();}
+
     private JsonbAnnotations annotations() {
         if (annotations == null) annotations = new JsonbAnnotations(elemental);
         return annotations;
@@ -139,6 +143,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             Optional<AnnotationWithSource<JsonbTransient>> jsonbTransient,
             Optional<AnnotationWithSource<JsonbProperty>> jsonbProperty,
             Optional<AnnotationWithSource<JsonbNumberFormat>> jsonbNumberFormat,
+            Optional<AnnotationWithSource<JsonbDateFormat>> jsonbDateFormat,
             Optional<AnnotationWithSource<JsonbNillable>> jsonbNillable) {
 
         /// Derive annotations from this elemental or eventually it's containers.
@@ -148,6 +153,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                     get(JsonbTransient.class, elemental),
                     get(JsonbProperty.class, elemental),
                     find(JsonbNumberFormat.class, elemental),
+                    find(JsonbDateFormat.class, elemental),
                     find(JsonbNillable.class, elemental));
         }
 
@@ -169,6 +175,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                             jsonbTransient,
                             jsonbProperty,
                             jsonbNumberFormat,
+                            jsonbDateFormat,
                             jsonbNillable)
                     .flatMap(Optional::stream);
         }
@@ -178,6 +185,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                     this.jsonbTransient.or(that::jsonbTransient),
                     this.jsonbProperty.or(that::jsonbProperty),
                     sorted(this.jsonbNumberFormat, that.jsonbNumberFormat),
+                    sorted(this.jsonbDateFormat, that.jsonbDateFormat),
                     sorted(this.jsonbNillable, that.jsonbNillable));
         }
 
@@ -191,7 +199,8 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         }
 
         record AnnotationWithSource<A extends Annotation>(A annotation, Elemental source) {
-            @Override public String toString() {return annotation + " on " + source;}
+            @Override
+            public String toString() {return annotation + " on " + sourceKind().toString().toLowerCase() + " " + source;}
 
             public ElementalKind sourceKind() {return source.kind();}
 
@@ -227,6 +236,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                 writeDirect(valueExpression());
             } else {
                 jsonbNumberFormat().ifPresent(jsonbNumberFormat -> writeComment("number format from " + jsonbNumberFormat));
+                jsonbDateFormat().ifPresent(jsonbDateFormat -> writeComment("date format from " + jsonbDateFormat));
 
                 var valueExpression = formatted(valueExpression());
                 if (isNillableFalse()) {
@@ -258,15 +268,41 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         }
 
         private String formatted(String valueExpression) {
-            return jsonbNumberFormat().map(jsonbNumberFormat -> {
-                // TODO as the config is static, it should be possible to do the formatting in far better performing inline code
-                var formatter = getNumberFormatterExpression(jsonbNumberFormat.annotation);
-                typeGenerator.addImport(Optional.class.getName());
-                return "Optional.ofNullable(" + valueExpression + ")\n" +
-                       "            .map(" + formatter + "::format)\n" +
-                       frenchNnbspWorkaround() +
-                       "            .orElse(null)";
-            }).orElse(valueExpression);
+            // TODO as this config is static, it should be possible to do the formatting with far better performing inline code.
+            //  But we can't simply create, e.g., a field in the generated code, as it could be shared between multiple calls,
+            //  but the formatters aren't thread-safe!
+            return jsonbDateFormat().map(jsonbDateFormat -> {
+                        var formatter = getDateTimeFormatterExpression(jsonbDateFormat.annotation);
+                        typeGenerator.addImport(DateTimeWriter.class.getName());
+                        typeGenerator.addImport(Optional.class.getName());
+                        return "Optional.ofNullable(" + valueExpression + ")\n" +
+                               "            .map(" + formatter + "::format)\n" +
+                               "            .orElse(null)";
+                    })
+                    .or(() -> jsonbNumberFormat().map(jsonbNumberFormat -> {
+                        var formatter = getNumberFormatterExpression(jsonbNumberFormat.annotation);
+                        typeGenerator.addImport(Optional.class.getName());
+                        return "Optional.ofNullable(" + valueExpression + ")\n" +
+                               "            .map(" + formatter + "::format)\n" +
+                               frenchNnbspWorkaround() +
+                               "            .orElse(null)";
+                    }))
+                    .orElse(valueExpression);
+        }
+
+        private String getDateTimeFormatterExpression(JsonbDateFormat annotation) {
+            String optionalLocaleExpression;
+            if (JsonbDateFormat.DEFAULT_LOCALE.equals(annotation.locale())) {
+                optionalLocaleExpression = "Optional.empty()";
+            } else {
+                typeGenerator.addImport(Locale.class.getName());
+                optionalLocaleExpression = "Optional.of(Locale.of(\"" + annotation.locale() + "\"))";
+            }
+            if (JsonbDateFormat.DEFAULT_FORMAT.equals(annotation.value())) {
+                return "DateTimeWriter.dateFormat(" + optionalLocaleExpression + ")";
+            } else {
+                return "DateTimeWriter.dateFormat(\"" + annotation.value() + "\", " + optionalLocaleExpression + ")";
+            }
         }
 
         private String getNumberFormatterExpression(JsonbNumberFormat format) {

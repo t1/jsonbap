@@ -3,17 +3,15 @@ package com.github.t1.jsonbap.impl;
 import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.api.Bindable;
-import jakarta.json.bind.annotation.JsonbNillable;
+import jakarta.json.bind.annotation.JsonbDateFormat;
 import jakarta.json.bind.annotation.JsonbNumberFormat;
-import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
-import lombok.Getter;
-import lombok.Setter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.util.Date;
 import java.util.Optional;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
@@ -271,7 +269,7 @@ class JsonbSerializerGeneratorTest {
                             @Override
                             public void serialize(JsonbSerializerGeneratorTest$FormattedNumberContainer object, JsonGenerator out, SerializationContext context) {
                                 out.writeStartObject();
-                                // number format from @jakarta.json.bind.annotation.JsonbNumberFormat(locale="de", value="") on com.github.t1.jsonbap.impl.JsonbSerializerGeneratorTest$FormattedNumberContainer#formattedField
+                                // number format from @jakarta.json.bind.annotation.JsonbNumberFormat(locale="de", value="") on field com.github.t1.jsonbap.impl.JsonbSerializerGeneratorTest$FormattedNumberContainer#formattedField
                                 context.serialize("formattedField", Optional.ofNullable(object.formattedField)
                                     .map(NumberFormat.getInstance(Locale.of("de"))::format)
                                     .orElse(null), out);

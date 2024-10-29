@@ -9,6 +9,7 @@ import com.github.t1.jsonbap.impl.serializers.Byte$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.serializers.ByteArray$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.serializers.CharArray$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.serializers.Character$$JsonbSerializer;
+import com.github.t1.jsonbap.impl.serializers.Date$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.serializers.Double$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.serializers.DoubleArray$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.serializers.Float$$JsonbSerializer;
@@ -101,7 +102,7 @@ public class ApJsonbProvider extends JsonbProvider {
             SERIALIZERS.put(Class.forName("java.time.ZoneRegion"), new ToStringSerializer<>());
 
             // old date/time types
-            SERIALIZERS.put(java.util.Date.class, new ToStringSerializer<>());
+            SERIALIZERS.put(java.util.Date.class, new Date$$JsonbSerializer());
             SERIALIZERS.put(GregorianCalendar.class, new ToStringSerializer<>());
             SERIALIZERS.put(Class.forName("sun.util.calendar.ZoneInfo"), new ToStringSerializer<>());
 

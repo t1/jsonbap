@@ -16,7 +16,7 @@ import java.io.Writer;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 
-import static com.github.t1.jsonbap.impl.JsonGeneratorContext.booleanConfig;
+import static com.github.t1.jsonbap.impl.JsonGeneratorContext.bool;
 import static jakarta.json.bind.JsonbConfig.FORMATTING;
 import static jakarta.json.stream.JsonGenerator.PRETTY_PRINTING;
 
@@ -93,7 +93,7 @@ public class JsonbapJsonb implements Jsonb {
 
     private JsonGeneratorFactory createJsonGeneratorFactory() {
         var jsonpConfig = new HashMap<String, Object>();
-        if (booleanConfig(config, FORMATTING)) {
+        if (bool(config, FORMATTING)) {
             jsonpConfig.put(PRETTY_PRINTING, true); // value is insignificant, i.e. FALSE is also pretty
         }
         return jsonpProvider.createGeneratorFactory(jsonpConfig);
