@@ -3,15 +3,14 @@ package com.github.t1.jsonbap.impl;
 import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.api.Bindable;
-import jakarta.json.bind.annotation.JsonbDateFormat;
 import jakarta.json.bind.annotation.JsonbNumberFormat;
+import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.util.Date;
 import java.util.Optional;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
@@ -158,7 +157,7 @@ class JsonbSerializerGeneratorTest {
                             public void serialize(JsonbSerializerGeneratorTest$TransientContainer object, JsonGenerator out, SerializationContext context) {
                                 out.writeStartObject();
                                 context.serialize("normalField", object.normalField, out);
-                                // field transientField is transient
+                                // field "transientField" is transient
                                 out.writeEnd();
                             }
                         }

@@ -26,9 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static lombok.AccessLevel.PROTECTED;
-
-@RequiredArgsConstructor(access = PROTECTED)
 abstract class Property<T extends Elemental> implements Comparable<Property<?>> {
     private static final Comparator<Property<?>> COMPARATOR = Comparator.comparing(Property::name);
 
@@ -46,10 +43,18 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     protected final TypeConfig typeConfig;
     protected final T elemental;
     private JsonbAnnotations annotations;
+    private boolean isTransient;
+
+    protected Property(JsonbapConfig jsonbapConfig, TypeConfig typeConfig, T elemental) {
+        this.jsonbapConfig = jsonbapConfig;
+        this.typeConfig = typeConfig;
+        this.elemental = elemental;
+        this.isTransient = elemental.isTransient();
+    }
 
     @Override public int compareTo(@NonNull Property that) {return COMPARATOR.compare(this, that);}
 
-    @Override public String toString() {return propertyType() + " " + rawName();}
+    @Override public String toString() {return propertyType() + " \"" + rawName() + '"';}
 
     protected abstract String propertyType();
 
@@ -57,7 +62,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     boolean isPublic() {return elemental().isPublic();}
 
-    boolean isTransient() {return elemental.isTransient() || annotations().jsonbTransient.isPresent();}
+    boolean isTransient() {return isTransient || annotations().jsonbTransient.isPresent();}
 
     /// annotated as `@JsonbNillable(false)`, i.e. ignore the `nillable` property of the `JsonbProperty` annotation,
     /// as well as the configuration of the context
@@ -130,6 +135,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         var base = optionalBase.get();
         var other = (base == this) ? that : this;
         base.annotations = base.annotations.merge(other.annotations);
+        base.isTransient = base.isTransient || other.isTransient;
         return base;
     }
 
@@ -222,7 +228,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
         public void write() {
             if (isTransient()) {
-                var transientMessage = Property.this + " is transient" + annotations().jsonbTransient.map(a -> " from " + a).orElse("");
+                var transientMessage = Property.this + " is transient" + transientSourceMessage();
                 writeComment(transientMessage);
                 annotations().all().filter(annotation -> !annotation.is(JsonbTransient.class)).findAny()
                         .ifPresent(a -> jsonbException(transientMessage + " but also annotated " + a));
@@ -231,6 +237,11 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             } else {
                 writeField();
             }
+        }
+
+        private String transientSourceMessage() {
+            if (isTransient && Property.this instanceof GetterProperty) return " from underlying field";
+            return annotations().jsonbTransient.map(a -> " from " + a).orElse("");
         }
 
         private void writeField() {
