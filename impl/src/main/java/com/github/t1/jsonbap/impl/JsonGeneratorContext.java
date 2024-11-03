@@ -3,6 +3,7 @@ package com.github.t1.jsonbap.impl;
 import com.github.t1.jsonbap.runtime.DateTimeWriter;
 import com.github.t1.jsonbap.runtime.NullWriter;
 import jakarta.json.bind.JsonbConfig;
+import jakarta.json.bind.config.PropertyVisibilityStrategy;
 import jakarta.json.bind.serializer.SerializationContext;
 import jakarta.json.stream.JsonGenerator;
 
@@ -14,11 +15,13 @@ import java.util.Optional;
 import static jakarta.json.bind.JsonbConfig.DATE_FORMAT;
 import static jakarta.json.bind.JsonbConfig.LOCALE;
 import static jakarta.json.bind.JsonbConfig.NULL_VALUES;
+import static jakarta.json.bind.JsonbConfig.PROPERTY_VISIBILITY_STRATEGY;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
 public record JsonGeneratorContext(
         boolean writeNullValues,
+        PropertyVisibilityStrategy propertyVisibilityStrategy,
         Locale locale,
         Optional<DateTimeFormatter> dateTimeFormatter,
         Optional<DateFormat> dateFormat)
@@ -28,9 +31,17 @@ public record JsonGeneratorContext(
     public JsonGeneratorContext(JsonbConfig config) {
         this(
                 bool(config, NULL_VALUES),
+                propertyVisibilityStrategy(config),
                 locale(config).orElseGet(Locale::getDefault),
                 string(config, DATE_FORMAT).map(pattern -> DateTimeWriter.dateTimeFormatter(pattern, locale(config))),
                 string(config, DATE_FORMAT).map(pattern -> DateTimeWriter.dateFormat(pattern, locale(config))));
+    }
+
+    private static PropertyVisibilityStrategy propertyVisibilityStrategy(JsonbConfig config) {
+        if (config.getProperty(PROPERTY_VISIBILITY_STRATEGY).isPresent())
+            throw JsonbapJsonb.notYetImplemented("this will be difficult to implement... " +
+                                                 "and slow, as it inevitably has to fall back to reflection");
+        return null;
     }
 
     private static Optional<Locale> locale(JsonbConfig config) {return string(config, LOCALE).map(Locale::forLanguageTag);}

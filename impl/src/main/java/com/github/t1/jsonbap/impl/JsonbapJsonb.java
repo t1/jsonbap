@@ -49,11 +49,15 @@ public class JsonbapJsonb implements Jsonb {
         throw notYetImplemented(); // TODO implement
     }
 
-    private static RuntimeException notYetImplemented() {
+    static RuntimeException notYetImplemented() {
+        return notYetImplemented("not yet implemented");
+    }
+
+    static RuntimeException notYetImplemented(String message) {
         try {
             return (RuntimeException) Class.forName("org.opentest4j.TestAbortedException")
                     .getConstructor(String.class)
-                    .newInstance("not yet implemented");
+                    .newInstance(message);
         } catch (ReflectiveOperationException e) {
             return new UnsupportedOperationException("not yet implemented");
         }

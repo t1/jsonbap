@@ -8,6 +8,8 @@ import jakarta.json.Json;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
+import jakarta.json.bind.annotation.JsonbVisibility;
+import jakarta.json.bind.config.PropertyVisibilityStrategy;
 import jakarta.json.bind.spi.JsonbProvider;
 import jakarta.json.spi.JsonProvider;
 import lombok.NoArgsConstructor;
@@ -17,12 +19,15 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.BDDAssertions.then;
+import static test.JsonbIT.Invisibilities.InvisibilitiesStrategy;
 import static test.JsonbIT.Product.PRODUCT;
 import static test.JsonbIT.TestConfig.FORMATTING;
 import static test.JsonbIT.TestConfig.FORMATTING_AND_NULL_VALUES;
@@ -376,6 +381,34 @@ abstract class JsonbIT extends AbstractJsonIT {
                                  "\"member\":false," +
                                  "\"registrationTimestamp\":10000000001," +
                                  "\"roles\":[\"role-1\",\"role-...\",\"role-1\"]}");
+        }
+    }
+
+
+    @Bindable
+    @SuppressWarnings("unused")
+    @JsonbVisibility(InvisibilitiesStrategy.class)
+    public static class Invisibilities {
+        public String invisibleField = "¬F";
+
+        public String getInvisibleGetter() {return "¬G";}
+
+        public String visibleField = "F";
+
+        public String getVisibleGetter() {return "G";}
+
+        public static class InvisibilitiesStrategy implements PropertyVisibilityStrategy {
+            @Override public boolean isVisible(Field field) {return field.getName().startsWith("visible");}
+            @Override public boolean isVisible(Method method) {return method.getName().startsWith("getVisible");}
+        }
+    }
+
+    @Test void shouldSerializeInvisibleElements() throws Exception {
+        try (var jsonb = jsonb(PLAIN)) {
+
+            var json = jsonb.toJson(new Invisibilities());
+
+            then(json).isEqualTo("{\"visibleField\":\"F\",\"visibleGetter\":\"G\"}");
         }
     }
 }

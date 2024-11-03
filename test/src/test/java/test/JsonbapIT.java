@@ -5,6 +5,7 @@ import com.github.t1.jsonbap.impl.ApJsonbProvider;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.annotation.JsonbNillable;
 import jakarta.json.bind.spi.JsonbProvider;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -201,5 +202,10 @@ public class JsonbapIT extends JsonbIT {
                         "lastName": null
                     }""");
         }
+    }
+
+    @Disabled("not yet implemented")
+    @Test void shouldSerializeInvisibleElements() throws Exception {
+        super.shouldSerializeInvisibleElements();
     }
 }

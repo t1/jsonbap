@@ -11,6 +11,7 @@ import jakarta.json.bind.annotation.JsonbNillable;
 import jakarta.json.bind.annotation.JsonbNumberFormat;
 import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.annotation.JsonbTransient;
+import jakarta.json.bind.annotation.JsonbVisibility;
 import jakarta.json.bind.serializer.SerializationContext;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -77,6 +78,8 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     Optional<AnnotationWithSource<JsonbDateFormat>> jsonbDateFormat() {return annotations().jsonbDateFormat();}
 
+    Optional<AnnotationWithSource<JsonbVisibility>> jsonbVisibility() {return annotations().jsonbVisibility();}
+
     private JsonbAnnotations annotations() {
         if (annotations == null) annotations = new JsonbAnnotations(elemental);
         return annotations;
@@ -141,6 +144,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     record JsonbAnnotations(
             Optional<AnnotationWithSource<JsonbTransient>> jsonbTransient,
+            Optional<AnnotationWithSource<JsonbVisibility>> jsonbVisibility,
             Optional<AnnotationWithSource<JsonbProperty>> jsonbProperty,
             Optional<AnnotationWithSource<JsonbNumberFormat>> jsonbNumberFormat,
             Optional<AnnotationWithSource<JsonbDateFormat>> jsonbDateFormat,
@@ -151,6 +155,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         JsonbAnnotations(Elemental elemental) {
             this(
                     get(JsonbTransient.class, elemental),
+                    find(JsonbVisibility.class, elemental),
                     get(JsonbProperty.class, elemental),
                     find(JsonbNumberFormat.class, elemental),
                     find(JsonbDateFormat.class, elemental),
@@ -173,6 +178,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         Stream<AnnotationWithSource<?>> all() {
             return Stream.of(
                             jsonbTransient,
+                            jsonbVisibility,
                             jsonbProperty,
                             jsonbNumberFormat,
                             jsonbDateFormat,
@@ -183,6 +189,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         JsonbAnnotations merge(JsonbAnnotations that) {
             return new JsonbAnnotations(
                     this.jsonbTransient.or(that::jsonbTransient),
+                    sorted(this.jsonbVisibility, that.jsonbVisibility),
                     this.jsonbProperty.or(that::jsonbProperty),
                     sorted(this.jsonbNumberFormat, that.jsonbNumberFormat),
                     sorted(this.jsonbDateFormat, that.jsonbDateFormat),
@@ -204,7 +211,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
             public ElementalKind sourceKind() {return source.kind();}
 
-            public boolean isA(Class<?> type) {return type.isInstance(annotation);}
+            public boolean is(Class<?> type) {return type.isInstance(annotation);}
         }
     }
 
@@ -217,8 +224,8 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             if (isTransient()) {
                 var transientMessage = Property.this + " is transient" + annotations().jsonbTransient.map(a -> " from " + a).orElse("");
                 writeComment(transientMessage);
-                annotations().all().filter(a -> !(a.isA(JsonbTransient.class))).findAny().ifPresent(a ->
-                        jsonbException(transientMessage + " but also annotated " + a));
+                annotations().all().filter(annotation -> !annotation.is(JsonbTransient.class)).findAny()
+                        .ifPresent(a -> jsonbException(transientMessage + " but also annotated " + a));
             } else if (!isPublic()) {
                 writeComment(this + " is not public");
             } else {
@@ -231,6 +238,9 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                 writeComment("name from JsonbProperty annotation");
             else if (derivedName().isPresent())
                 writeComment("name derived from " + propertyType() + " name with strategy " + typeConfig.propertyNamingStrategy());
+
+            jsonbVisibility().ifPresent(jsonbVisibility -> writeComment("visibility from " + jsonbVisibility));
+            // TODO call the visibility strategy to find out, if we should write this property at all
 
             if (PRIMITIVE_TYPES.contains(typeName()) && jsonbNumberFormat().isEmpty()) {
                 writeDirect(valueExpression());
