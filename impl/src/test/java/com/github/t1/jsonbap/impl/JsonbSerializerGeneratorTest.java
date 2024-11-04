@@ -1,17 +1,18 @@
 package com.github.t1.jsonbap.impl;
 
 import com.github.t1.exap.generator.TypeGenerator;
-import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.api.Bindable;
 import jakarta.json.bind.annotation.JsonbNumberFormat;
 import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
+import lombok.Getter;
+import lombok.Setter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
+import java.util.List;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
 import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.LOWER_CASE_WITH_DASHES;
@@ -278,18 +279,37 @@ class JsonbSerializerGeneratorTest {
                         """);
     }
 
-    private static void generate(Class<?> serializableClass) {
-        var type = ENV.type(serializableClass);
-        generate(type, type.annotation(Bindable.class));
+    @Setter @Getter public static class DuplicateNameContainer {
+        private String firstInstance;
+
+        @JsonbProperty("firstInstance")
+        private String secondInstance;
     }
 
-    private static void generate(Type type, Optional<Bindable> bindable) {
+    @Test
+    public void shouldFailToGenerateDuplicateProperty() {
+        var messages = generator(DuplicateNameContainer.class);
+
+        then(messages).containsExactly("Duplicate property name: field \"firstInstance\" and field \"secondInstance\"" +
+                                       " in " + DuplicateNameContainer.class);
+    }
+
+
+    private static List<String> generator(Class<?> serializableClass) {
+        var type = ENV.type(serializableClass);
+        var bindable = type.annotation(Bindable.class);
         var generator = new JsonbSerializerGenerator(new JsonbapConfig(), type, new TypeConfig(bindable));
         var className = generator.className();
 
         try (var typeGenerator = new TypeGenerator(ENV.round(), type.getPackage(), className)) {
             generator.generate(typeGenerator);
         }
-        then(ENV.getMessages(null, ERROR)).isEmpty();
+
+        return ENV.getMessages(null, ERROR);
+    }
+
+    private static void generate(Class<?> serializableClass) {
+        var messages = generator(serializableClass);
+        then(messages).isEmpty();
     }
 }

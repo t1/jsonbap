@@ -77,7 +77,7 @@ class JsonbSerializerGenerator {
     private Collector<Property<?>, Map<String, Property<?>>, List<Property<?>>> propertiesMerger() {
         return Collector.of(
                 LinkedHashMap::new,
-                (m, p) -> m.merge(p.rawName(), p, Property::merge),
+                (m, p) -> m.merge(p.name(), p, Property::merge),
                 (l, r) -> {
                     l.putAll(r);
                     return l;

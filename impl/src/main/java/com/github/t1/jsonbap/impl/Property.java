@@ -20,11 +20,15 @@ import java.lang.annotation.Annotation;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import static com.github.t1.exap.insight.ElementalKind.TYPE;
 
 abstract class Property<T extends Elemental> implements Comparable<Property<?>> {
     private static final Comparator<Property<?>> COMPARATOR = Comparator.comparing(Property::name);
@@ -42,6 +46,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     protected final JsonbapConfig jsonbapConfig;
     protected final TypeConfig typeConfig;
     protected final T elemental;
+    private final List<String> elementalErrors = new ArrayList<>();
     private JsonbAnnotations annotations;
     private boolean isTransient;
 
@@ -130,13 +135,40 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     /// then the value is obtained directly from the field.
     public Property<?> merge(Property<?> that) {
         elemental.note("merge " + this + " and " + that);
+        // It's not a property duplications, if it's a field and a getter with the same name,
+        // but it _is_ a duplication, if it's two fields or two getters with the same name (after renaming).
+        if (this.getClass() == that.getClass()) this.elementalError(duplicatePropertyMessage(that));
         var optionalBase = this.or(that);
         if (optionalBase.isOr()) return null;
         var base = optionalBase.get();
         var other = (base == this) ? that : this;
         base.annotations = base.annotations.merge(other.annotations);
         base.isTransient = base.isTransient || other.isTransient;
+        base.elementalErrors.addAll(other.elementalErrors);
         return base;
+    }
+
+    private String duplicatePropertyMessage(Property<?> that) {
+        var thisEnclosing = enclosingType(this.elemental);
+        var thatEnclosing = enclosingType(that.elemental);
+        return "Duplicate property name: " + ((thisEnclosing == thatEnclosing)
+                ? this + " and " + that + " in class " + thisEnclosing
+                : this + " in class " + thisEnclosing + " and " + that + " in class " + thatEnclosing);
+    }
+
+    private static Elemental enclosingType(Elemental elemental) {
+        var enclosing = elemental.enclosingElement().orElseThrow();
+        assert enclosing.kind() == TYPE : "unexpected kind of " + enclosing; // in the message above, we concat "class"
+        return enclosing;
+    }
+
+    private void elementalError(String message) {
+        elementalErrors.add(message);
+        if (jsonbapConfig.throwJsonbExceptionsAtRuntime()) {
+            elemental.warning("THIS IS NORMALLY A COMPILE ERROR: " + message);
+        } else {
+            elemental.error(message);
+        }
     }
 
     protected abstract <V extends Property<?>> Either<V, String> or(V that);
@@ -231,12 +263,24 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                 var transientMessage = Property.this + " is transient" + transientSourceMessage();
                 writeComment(transientMessage);
                 annotations().all().filter(annotation -> !annotation.is(JsonbTransient.class)).findAny()
-                        .ifPresent(a -> jsonbException(transientMessage + " but also annotated " + a));
+                        .ifPresent(a -> elementalError(transientMessage + " but also annotated " + a));
             } else if (!isPublic()) {
-                writeComment(this + " is not public");
+                writeComment(Property.this + " is not public");
             } else {
                 writeField();
             }
+            elementalErrors.forEach(this::writeError);
+        }
+
+        /// Even if we don't fail the build at compile time (due to the `throwJsonbExceptionsAtRuntime` config option),
+        /// we still create code that throws a `JsonbException` at runtime... as required by the spec.
+        private void writeError(String message) {
+            typeGenerator.addImport("jakarta.json.bind.JsonbException");
+            // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
+            out.append("        if (true) throw new JsonbException(\"")
+                    .append(message.replace("\"", "\\\""))
+                    .append("\");\n");
+
         }
 
         private String transientSourceMessage() {
@@ -350,18 +394,6 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
         private String frenchNnbspWorkaround() {
             return jsonbapConfig.frenchNnbspWorkaround() ? "            .map(f -> f.replace('\\u202f', '\\u00a0'))\n" : "";
-        }
-
-        private void jsonbException(String message) {
-            typeGenerator.addImport("jakarta.json.bind.JsonbException");
-            // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
-            out.append("        if (true) throw new JsonbException(\"").append(message.replace("\"", "\\\"")).append("\");\n");
-
-            if (jsonbapConfig.throwJsonbExceptionsAtRuntime()) {
-                elemental.warning("THIS IS NORMALLY A COMPILE ERROR: " + message);
-            } else {
-                elemental.error(message);
-            }
         }
 
         /**
