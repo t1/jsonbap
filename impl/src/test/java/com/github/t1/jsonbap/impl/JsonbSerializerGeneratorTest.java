@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayDeque;
 import java.util.List;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
@@ -294,6 +295,10 @@ class JsonbSerializerGeneratorTest {
                                        " in " + DuplicateNameContainer.class);
     }
 
+    private static void generate(Class<?> serializableClass) {
+        var messages = generator(serializableClass);
+        then(messages).isEmpty();
+    }
 
     private static List<String> generator(Class<?> serializableClass) {
         var type = ENV.type(serializableClass);

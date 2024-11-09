@@ -3,6 +3,7 @@ package com.github.t1.jsonbap.impl;
 import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.Elemental;
 import com.github.t1.exap.insight.ElementalKind;
+import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.impl.Property.JsonbAnnotations.AnnotationWithSource;
 import com.github.t1.jsonbap.runtime.DateTimeWriter;
 import com.github.t1.jsonbap.runtime.NullWriter;
@@ -28,7 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.github.t1.exap.insight.ElementalKind.TYPE;
+import static java.util.stream.Collectors.joining;
 
 abstract class Property<T extends Elemental> implements Comparable<Property<?>> {
     private static final Comparator<Property<?>> COMPARATOR = Comparator.comparing(Property::name);
@@ -136,11 +137,13 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     public Property<?> merge(Property<?> that) {
         elemental.note("merge " + this + " and " + that);
         // It's not a property duplications, if it's a field and a getter with the same name,
+        // or a corresponding getter from a super class,
         // but it _is_ a duplication, if it's two fields or two getters with the same name (after renaming).
-        if (this.getClass() == that.getClass()) this.elementalError(duplicatePropertyMessage(that));
-        var optionalBase = this.or(that);
-        if (optionalBase.isOr()) return null;
-        var base = optionalBase.get();
+        if (this.getClass() == that.getClass() && !inheritFromOrTo(that))
+            this.elementalError(duplicatePropertyMessage(that));
+        var eitherBase = this.or(that);
+        if (eitherBase.isOr()) return null;
+        var base = eitherBase.get();
         var other = (base == this) ? that : this;
         base.annotations = base.annotations.merge(other.annotations);
         base.isTransient = base.isTransient || other.isTransient;
@@ -148,18 +151,28 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         return base;
     }
 
-    private String duplicatePropertyMessage(Property<?> that) {
-        var thisEnclosing = enclosingType(this.elemental);
-        var thatEnclosing = enclosingType(that.elemental);
-        return "Duplicate property name: " + ((thisEnclosing == thatEnclosing)
-                ? this + " and " + that + " in class " + thisEnclosing
-                : this + " in class " + thisEnclosing + " and " + that + " in class " + thatEnclosing);
+    private boolean inheritFromOrTo(Property<?> that) {
+        var thisType = enclosingType(this.elemental);
+        var thatType = enclosingType(that.elemental);
+        return thisType != thatType && (thisType.isA(thatType) || thatType.isA(thisType));
     }
 
-    private static Elemental enclosingType(Elemental elemental) {
+    private String duplicatePropertyMessage(Property<?> that) {
+        var thisType = enclosingType(this.elemental);
+        var thatType = enclosingType(that.elemental);
+        return "Duplicate property name: " + ((thisType == thatType)
+                ? this + " and " + that + " in class " + thisType
+                : this + " in class " + thisType + " and " + that + " in class " + thatType);
+    }
+
+    private static Type enclosingType(Elemental elemental) {
         var enclosing = elemental.enclosingElement().orElseThrow();
-        assert enclosing.kind() == TYPE : "unexpected kind of " + enclosing; // in the message above, we concat "class"
-        return enclosing;
+        try {
+            return (Type) enclosing;
+        } catch (ClassCastException e) {
+            throw new RuntimeException("expected " + elemental + " to be contained in a class, but it's the " +
+                                       enclosing.kind().toString().toLowerCase() + " " + enclosing, e);
+        }
     }
 
     private void elementalError(String message) {
@@ -198,6 +211,10 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                     find(JsonbNumberFormat.class, elemental),
                     find(JsonbDateFormat.class, elemental),
                     find(JsonbNillable.class, elemental));
+        }
+
+        @Override public String toString() {
+            return all().map(AnnotationWithSource::toString).collect(joining(", ", "[", "]"));
         }
 
         /// annotation directly on the field or getter
