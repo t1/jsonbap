@@ -2,6 +2,8 @@ package test;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.spi.JsonbProvider;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
@@ -19,4 +21,13 @@ public class JohnzonIT extends JsonbIT {
                     .build()));
 
     @Override protected Jsonb jsonb(TestConfig testConfig) {return JSONB_MAP.get(testConfig);}
+
+    @Disabled("Johnzon doesn't support serializing Optional values")
+    @Test void shouldSerializeOptionalList() {}
+
+    @Disabled("Johnzon doesn't support deserializing BigDecimal values")
+    @Test void shouldDeserializePerson() {}
+
+    @Disabled("Johnzon doesn't support deserializing BigDecimal values")
+    @Test void shouldDeserializePersonWithNullValues() {}
 }

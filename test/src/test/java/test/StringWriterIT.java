@@ -14,6 +14,8 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 
+import static org.assertj.core.api.Assumptions.assumeThat;
+
 public class StringWriterIT extends AbstractJsonIT {
     @SneakyThrows(IOException.class)
     @Override String toJson(Object object) {
@@ -145,5 +147,10 @@ public class StringWriterIT extends AbstractJsonIT {
             delim = ',';
         }
         out.append("}");
+    }
+
+    @Override <T> T fromJson(String json, Class<T> type) {
+        assumeThat(true).describedAs("won't implement this").isFalse();
+        return null;
     }
 }

@@ -32,7 +32,7 @@ public class Person {
     private Address formerAddress;
 
     private boolean member;
-    private @Singular List<String> roles;
+    private List<String> roles;
     private long registrationTimestamp;
 
     private @Singular List<Pet> pets;

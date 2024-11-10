@@ -33,28 +33,31 @@ abstract class AbstractJsonIT {
     }
 
     static String json(int i, boolean nullValues) {
-        return
-                "{\"address\":{" +
-                        /**/"\"city\":\"Somewhere-" + i + "\"," +
-                        /**/(nullValues ? "\"country\":null," : "") +
-                        /**/(nullValues ? "\"state\":null," : "") +
-                        /**/"\"street\":\"" + (12000 + i) + " Main Street\"," +
-                        /**/"\"zip\":" + (50000 + i) +
-                "}," +
-                "\"age\":" + (12 + i) + "," +
-                "\"averageScore\":" + (0.123d * i) + "," +
-                "\"firstName\":\"Jane-" + i + "\"," +
-                (nullValues ? "\"formerAddress\":null," : "") +
-                "\"income\":\"123" + NNBSP + "456" + NNBSP + "789,01\"," +
-                "\"lastName\":\"Doe-" + i + "\"," +
-                "\"member\":" + (i % 2 == 0) + "," +
-                "\"pets\":[" +
-                        /**/"{\"@type\":\"cat\",\"isCat\":true,\"name\":\"foo-" + i + "\"}," +
-                        /**/"{\"@type\":\"cat\",\"isCat\":true,\"name\":\"bar-" + i + "\"}," +
-                        /**/"{\"@type\":\"dog\",\"isDog\":true,\"name\":\"baz-" + i + "\"}" +
-                "]," +
-                "\"registrationTimestamp\":" + (i + 10000000000L) + "," +
-                "\"roles\":[\"role-1\",\"role-...\",\"role-" + i + "\"]}";
+        return "{\"address\":" + addressJson(i, nullValues) + "," +
+               "\"age\":" + (12 + i) + "," +
+               "\"averageScore\":" + (0.123d * i) + "," +
+               "\"firstName\":\"Jane-" + i + "\"," +
+               (nullValues ? "\"formerAddress\":null," : "") +
+               "\"income\":\"123" + NNBSP + "456" + NNBSP + "789,01\"," +
+               "\"lastName\":\"Doe-" + i + "\"," +
+               "\"member\":" + (i % 2 == 0) + "," +
+               "\"pets\":[" +
+                /**/"{\"@type\":\"cat\",\"isCat\":true,\"name\":\"foo-" + i + "\"}," +
+                /**/"{\"@type\":\"cat\",\"isCat\":true,\"name\":\"bar-" + i + "\"}," +
+                /**/"{\"@type\":\"dog\",\"isDog\":true,\"name\":\"baz-" + i + "\"}" +
+               "]," +
+               "\"registrationTimestamp\":" + (i + 10000000000L) + "," +
+               "\"roles\":[\"role-1\",\"role-...\",\"role-" + i + "\"]}";
+    }
+
+    static String addressJson(int i, boolean nullValues) {
+        return "{" +
+                /**/"\"city\":\"Somewhere-" + i + "\"," +
+                /**/(nullValues ? "\"country\":null," : "") +
+                /**/(nullValues ? "\"state\":null," : "") +
+                /**/"\"street\":\"" + (12000 + i) + " Main Street\"," +
+                /**/"\"zip\":" + (50000 + i) +
+               "}";
     }
 
     static Person person(int i) {
@@ -67,9 +70,7 @@ abstract class AbstractJsonIT {
                 .formerAddress(null)
                 .member(i % 2 == 0)
                 .registrationTimestamp(i + 10000000000L)
-                .role("role-1")
-                .role("role-...")
-                .role("role-" + i)
+                .roles(List.of("role-1", "role-...", "role-" + i))
                 .pet(new Cat("foo-" + i))
                 .pet(new Cat("bar-" + i))
                 .pet(new Dog("baz-" + i))
@@ -103,4 +104,12 @@ abstract class AbstractJsonIT {
         }
         return out.toString();
     }
+
+    @Test void shouldDeserializeAddress() {
+        var person = fromJson(addressJson(0, false), Address.class);
+
+        then(person).usingRecursiveComparison().isEqualTo(address(0));
+    }
+
+    abstract <T> T fromJson(String json, Class<T> type);
 }

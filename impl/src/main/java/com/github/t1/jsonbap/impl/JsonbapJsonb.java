@@ -3,14 +3,19 @@ package com.github.t1.jsonbap.impl;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbConfig;
 import jakarta.json.bind.JsonbException;
+import jakarta.json.bind.serializer.DeserializationContext;
+import jakarta.json.bind.serializer.JsonbDeserializer;
 import jakarta.json.spi.JsonProvider;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
+import jakarta.json.stream.JsonParser;
 import lombok.RequiredArgsConstructor;
 
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Type;
@@ -26,34 +31,33 @@ public class JsonbapJsonb implements Jsonb {
     private final JsonProvider jsonpProvider;
 
     @Override public <T> T fromJson(String str, Class<T> type) throws JsonbException {
-        throw notYetImplemented(); // TODO implement
+        return fromJson(str, (Type) type);
     }
 
-    @Override public <T> T fromJson(String str, Type runtimeType) throws JsonbException {
-        throw notYetImplemented(); // TODO implement
+    @Override public <T> T fromJson(String str, Type type) throws JsonbException {
+        return fromJson(new StringReader(str), type);
     }
 
     @Override public <T> T fromJson(Reader reader, Class<T> type) throws JsonbException {
-        throw notYetImplemented(); // TODO implement
+        return fromJson(reader, (Type) type);
     }
 
-    @Override public <T> T fromJson(Reader reader, Type runtimeType) throws JsonbException {
-        throw notYetImplemented(); // TODO implement
+    @Override public <T> T fromJson(Reader reader, Type type) throws JsonbException {
+        JsonParser parser = jsonpProvider.createParser(reader);
+        DeserializationContext context = new JsonParserContext(config);
+        JsonbDeserializer<T> deserializer = ApJsonbProvider.deserializerFor(type);
+        return deserializer.deserialize(parser, context, type);
     }
 
     @Override public <T> T fromJson(InputStream stream, Class<T> type) throws JsonbException {
-        throw notYetImplemented(); // TODO implement
+        return fromJson(stream, (Type) type);
     }
 
-    @Override public <T> T fromJson(InputStream stream, Type runtimeType) throws JsonbException {
-        throw notYetImplemented(); // TODO implement
+    @Override public <T> T fromJson(InputStream stream, Type type) throws JsonbException {
+        return fromJson(new InputStreamReader(stream), type);
     }
 
-    static RuntimeException notYetImplemented() {
-        return notYetImplemented("not yet implemented");
-    }
-
-    static RuntimeException notYetImplemented(String message) {
+    static RuntimeException notYetImplemented(@SuppressWarnings("SameParameterValue") String message) {
         try {
             return (RuntimeException) Class.forName("org.opentest4j.TestAbortedException")
                     .getConstructor(String.class)

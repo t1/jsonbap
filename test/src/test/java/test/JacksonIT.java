@@ -17,4 +17,9 @@ class JacksonIT extends AbstractJsonIT {
                 .replace("\"income\":\"123456789.01\"",
                         "\"income\":\"123" + NNBSP + "456" + NNBSP + "789,01\"");
     }
+
+    @SneakyThrows(JacksonException.class)
+    @Override <T> T fromJson(String json, Class<T> type) {
+        return MAPPER.readValue(json, type);
+    }
 }

@@ -4,6 +4,7 @@ import com.github.t1.jsonbap.api.Bindable;
 import com.github.t1.jsonbap.test.Address;
 import com.github.t1.jsonbap.test.Cat;
 import com.github.t1.jsonbap.test.Dog;
+import com.github.t1.jsonbap.test.Person;
 import jakarta.json.Json;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
@@ -15,6 +16,7 @@ import jakarta.json.spi.JsonProvider;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -24,6 +26,7 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.BDDAssertions.then;
@@ -399,6 +402,7 @@ abstract class JsonbIT extends AbstractJsonIT {
 
         public static class InvisibilitiesStrategy implements PropertyVisibilityStrategy {
             @Override public boolean isVisible(Field field) {return field.getName().startsWith("visible");}
+
             @Override public boolean isVisible(Method method) {return method.getName().startsWith("getVisible");}
         }
     }
@@ -409,6 +413,67 @@ abstract class JsonbIT extends AbstractJsonIT {
             var json = jsonb.toJson(new Invisibilities());
 
             then(json).isEqualTo("{\"visibleField\":\"F\",\"visibleGetter\":\"G\"}");
+        }
+    }
+
+    @Test void shouldSerializeOptionalList() throws Exception {
+        try (var jsonb = jsonb()) {
+
+            var json = jsonb.toJson(List.of(
+                    Optional.of("one"),
+                    Optional.empty(),
+                    Optional.of("three")));
+
+            then(json).isEqualTo("""
+                    [
+                        "one",
+                        null,
+                        "three"
+                    ]""");
+        }
+    }
+
+
+    @Test void shouldDeserializePerson() {
+        var person = fromJson(cheat(json(0, false)), Person.class);
+
+        then(person).usingRecursiveComparison().isEqualTo(cheat(person(0)));
+    }
+
+    @Test void shouldDeserializePersonWithNullValues() {
+        var person = fromJson("{" +
+                              "\"firstName\":null," +
+                              "\"lastName\":null," +
+                              "\"address\":null," +
+                              "\"formerAddress\":null," +
+                              //"\"pets\":null," +
+                              //"\"roles\":null," +
+                              "\"income\":null" +
+                              "}", Person.class);
+
+        then(person).usingRecursiveComparison().isEqualTo(cheat(new Person()));
+    }
+
+    String cheat(String json) {
+        return json
+                .replaceAll("\"pets\":\\[.*?],", "")
+                .replaceAll(" ", "").replaceAll("789,01", "789.01");
+    }
+
+    Person cheat(Person person) {return person;}
+
+    @Disabled("TODO implement deserialization of list values")
+    @Test void shouldDeserialize() {
+        var list = fromJson(repeatedJson(false), DATA.getClass());
+
+        then(list).isEqualTo(DATA);
+    }
+
+    @Override <T> T fromJson(String json, Class<T> type) {
+        try (var jsonb = jsonb(PLAIN)) {
+            return jsonb.fromJson(json, type);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

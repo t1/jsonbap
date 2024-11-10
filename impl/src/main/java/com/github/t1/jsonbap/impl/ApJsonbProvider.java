@@ -33,6 +33,7 @@ import jakarta.json.JsonValue;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
+import jakarta.json.bind.serializer.JsonbDeserializer;
 import jakarta.json.bind.serializer.JsonbSerializer;
 import jakarta.json.bind.spi.JsonbProvider;
 import jakarta.json.spi.JsonProvider;
@@ -165,6 +166,16 @@ public class ApJsonbProvider extends JsonbProvider {
         var typeName = type.getTypeName();
         var genericTypeIndex = typeName.indexOf('<');
         return genericTypeIndex < 0 ? typeName : typeName.substring(0, typeName.indexOf('<'));
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> JsonbDeserializer<T> deserializerFor(Type type) {
+        try {
+            var deserializerClass = Class.forName(nonGenericTypeName(type) + "$$JsonbDeserializer");
+            return (JsonbDeserializer<T>) deserializerClass.getConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("can't create instance of jsonb deserializer for " + type, e);
+        }
     }
 
 

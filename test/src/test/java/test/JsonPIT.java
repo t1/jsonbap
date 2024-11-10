@@ -1,23 +1,31 @@
 package test;
 
 import com.github.t1.jsonbap.runtime.NullWriter;
+import com.github.t1.jsonbap.runtime.ParserHelper;
 import com.github.t1.jsonbap.test.Address;
+import com.github.t1.jsonbap.test.Address$$JsonbDeserializer;
 import com.github.t1.jsonbap.test.Cat;
 import com.github.t1.jsonbap.test.Dog;
 import com.github.t1.jsonbap.test.Person;
 import com.github.t1.jsonbap.test.Pet;
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonParser;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import static jakarta.json.stream.JsonParser.Event.KEY_NAME;
+import static jakarta.json.stream.JsonParser.Event.START_OBJECT;
 import static org.assertj.core.api.BDDAssertions.then;
 
+@Slf4j
 public class JsonPIT extends AbstractJsonIT {
     @Override String toJson(Object object) {
         @SuppressWarnings("unchecked")
@@ -149,5 +157,55 @@ public class JsonPIT extends AbstractJsonIT {
                 "\"firstName\":\"Jane\"," +
                 "\"lastName\":null" +
                 "}");
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    <T> T fromJson(String json, Class<T> type) {
+        var parser = Json.createParser(new StringReader(json));
+        if (type == Address.class) return (T) parseAddress(parser);
+        if (type == Person.class) return (T) parsePerson(parser);
+        throw new UnsupportedOperationException("unknown type: " + type);
+    }
+
+    private Address parseAddress(JsonParser jsonParser) {
+        var parser = new ParserHelper(jsonParser);
+        var builder = Address.builder();
+        parser.next().assume(START_OBJECT);
+        while (parser.next().is(KEY_NAME)) {
+            switch (parser.getString()) {
+                case "city" -> parser.next().String().ifPresent(builder::city);
+                case "country" -> parser.next().String().ifPresent(builder::country);
+                case "state" -> parser.next().String().ifPresent(builder::state);
+                case "street" -> parser.next().String().ifPresent(builder::street);
+                case "zip" -> parser.next().Integer().ifPresent(builder::zip);
+                case String key -> log.debug("unknown key: {}", key);
+            }
+        }
+        return builder.build();
+    }
+
+    private Person parsePerson(JsonParser jsonParser) {
+        var parser = new ParserHelper(jsonParser);
+        var builder = Person.builder();
+        parser.next().assume(START_OBJECT);
+        while (parser.next().is(KEY_NAME)) {
+            switch (parser.getString()) {
+                case "firstName" -> parser.next().String().ifPresent(builder::firstName);
+                case "lastName" -> parser.next().String().ifPresent(builder::lastName);
+                case "age" -> parser.next().Integer().ifPresent(builder::age);
+                case "averageScore" -> parser.next().Double().ifPresent(builder::averageScore);
+                case "address" ->
+                        builder.address(new Address$$JsonbDeserializer().deserialize(jsonParser, null, Address.class));
+                case "formerAddress" ->
+                        builder.formerAddress(new Address$$JsonbDeserializer().deserialize(jsonParser, null, Address.class));
+                case "member" -> parser.next().Boolean().ifPresent(builder::member);
+                //case "roles" -> builder.roles(Stream.of(ctx.deserialize(String[].class, jsonParser)).toList());
+                case "registrationTimestamp" -> parser.next().Long().ifPresent(builder::registrationTimestamp);
+                //case "pets" -> Stream.of(ctx.deserialize(Pet[].class, jsonParser)).forEach(builder::pet);
+                case "income" -> parser.next().BigDecimal().ifPresent(builder::income);
+            }
+        }
+        return builder.build();
     }
 }
