@@ -21,13 +21,17 @@ class FieldProperty extends Property<Field> {
 
     @Override protected String propertyType() {return "field";}
 
+    @Override boolean isSettable() {return isPublic();}
+
     @Override
     @SuppressWarnings("unchecked")
     protected <T extends Property<?>> Either<T, String> or(T that) {
         return Either.<T, String>value(that).with(Property::isPublic, (T) this);
     }
 
-    @Override protected String typeName() {return elemental().getType().getSimpleName();}
+    @Override protected Type type() {return elemental().getType();}
 
-    @Override protected String valueExpression() {return "object." + rawName();}
+    @Override protected String readExpression() {return "object." + rawName();}
+
+    @Override protected String writeExpression(String value) {return rawName() + " = " + value;}
 }

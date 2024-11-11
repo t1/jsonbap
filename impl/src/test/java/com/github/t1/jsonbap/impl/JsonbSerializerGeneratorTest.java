@@ -4,8 +4,7 @@ import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.jsonbap.api.Bindable;
 import jakarta.json.bind.annotation.JsonbNumberFormat;
 import jakarta.json.bind.annotation.JsonbProperty;
-import jakarta.json.bind.annotation.JsonbSubtype;
-import jakarta.json.bind.annotation.JsonbTypeInfo;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.junit.jupiter.api.AfterEach;
@@ -22,60 +21,66 @@ import static javax.tools.StandardLocation.SOURCE_OUTPUT;
 import static org.assertj.core.api.BDDAssertions.then;
 
 class JsonbSerializerGeneratorTest {
-    @JsonbTypeInfo({
-            @JsonbSubtype(alias = "cat", type = Cat.class),
-            @JsonbSubtype(alias = "dog", type = Dog.class)
-    })
-    interface Pet {}
+    private static void generate(Class<?> serializableClass) {
+        var messages = generator(serializableClass);
+        then(messages).isEmpty();
+    }
 
-    @Bindable
-    public static class Dog implements Pet {
-        @SuppressWarnings("unused")
-        public boolean getIsDog() {return true;}
+    // TODO can we merge this logic with the one in JsonbAnnotationProcessor#process?
+    private static List<String> generator(Class<?> serializableClass) {
+        var type = ENV.type(serializableClass);
+        var bindable = type.annotation(Bindable.class);
+        if (!bindable.map(Bindable::serializable).orElse(true)) return List.of();
+        var generator = new JsonbSerializerGenerator(new JsonbapConfig(), type, new TypeConfig(bindable));
+        var className = generator.className();
+
+        try (var typeGenerator = new TypeGenerator(ENV.round(), type.getPackage(), className)) {
+            generator.generate(typeGenerator);
+        }
+
+        return ENV.getMessages(null, ERROR);
+    }
+
+    private static String generated(Class<?> type) {
+        return ENV.getCreatedResource(SOURCE_OUTPUT, type.getPackage().getName(),
+                relativeName(type) + "$$JsonbSerializer");
+    }
+
+    static String relativeName(Class<?> type) {
+        var packageLength = type.getPackage().getName().length();
+        if (packageLength > 0)
+            ++packageLength; // for the final dot
+        var relativeName = type.getName().substring(packageLength);
+        var typeParameters = relativeName.indexOf('<');
+        if (typeParameters >= 0)
+            relativeName = relativeName.substring(0, typeParameters);
+        return relativeName;
     }
 
     @AfterEach
     void tearDown() {
         ENV.clearCreatedResources();
+        ENV.getMessages().clear();
     }
 
-
-    @Test
-    void shouldGeneratePersonWriter() {
-        generate(Person.class);
-
-        then(ENV.getCreatedResource(SOURCE_OUTPUT, Person.class.getPackage().getName(), "Person$$JsonbSerializer")).isEqualTo(
-                """
-                        package com.github.t1.jsonbap.impl;
-                        
-                        import javax.annotation.processing.Generated;
-                        
-                        import jakarta.json.bind.serializer.JsonbSerializer;
-                        import jakarta.json.bind.serializer.SerializationContext;
-                        import jakarta.json.stream.JsonGenerator;
-                        
-                        @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
-                        public class Person$$JsonbSerializer implements JsonbSerializer<Person> {
-                        
-                            @Override
-                            public void serialize(Person object, JsonGenerator out, SerializationContext context) {
-                                out.writeStartObject();
-                                context.serialize("address", object.getAddress(), out);
-                                out.write("age", object.getAge());
-                                context.serialize("firstName", object.getFirstName(), out);
-                                context.serialize("lastName", object.getLastName(), out);
-                                context.serialize("roles", object.getRoles(), out);
-                                out.writeEnd();
-                            }
-                        }
-                        """);
+    @Bindable(serializable = false)
+    @Data
+    public static class NotSerializable {
+        private String notSerializable;
     }
 
     @Test
-    void shouldGenerateAddressWriter() {
+    void shouldNotGenerateSerializerForNotSerializableClass() {
+        generate(NotSerializable.class);
+
+        then(generated(NotSerializable.class)).isNull();
+    }
+
+    @Test
+    void shouldGenerateAddressSerializer() {
         generate(Address.class);
 
-        then(ENV.getCreatedResource(SOURCE_OUTPUT, Address.class.getPackage().getName(), "Address$$JsonbSerializer")).isEqualTo(
+        then(generated(Address.class)).isEqualTo(
                 """
                         package com.github.t1.jsonbap.impl;
                         
@@ -103,10 +108,41 @@ class JsonbSerializerGeneratorTest {
     }
 
     @Test
-    void shouldGenerateCatWriter() {
+    void shouldGeneratePersonSerializer() {
+        generate(Person.class);
+
+        then(generated(Person.class)).isEqualTo(
+                """
+                        package com.github.t1.jsonbap.impl;
+                        
+                        import javax.annotation.processing.Generated;
+                        
+                        import jakarta.json.bind.serializer.JsonbSerializer;
+                        import jakarta.json.bind.serializer.SerializationContext;
+                        import jakarta.json.stream.JsonGenerator;
+                        
+                        @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
+                        public class Person$$JsonbSerializer implements JsonbSerializer<Person> {
+                        
+                            @Override
+                            public void serialize(Person object, JsonGenerator out, SerializationContext context) {
+                                out.writeStartObject();
+                                context.serialize("address", object.getAddress(), out);
+                                out.write("age", object.getAge());
+                                context.serialize("firstName", object.getFirstName(), out);
+                                context.serialize("lastName", object.getLastName(), out);
+                                context.serialize("roles", object.getRoles(), out);
+                                out.writeEnd();
+                            }
+                        }
+                        """);
+    }
+
+    @Test
+    void shouldGenerateCatSerializer() {
         generate(Cat.class);
 
-        then(ENV.getCreatedResource(SOURCE_OUTPUT, Cat.class.getPackage().getName(), "Cat$$JsonbSerializer")).isEqualTo(
+        then(generated(Cat.class)).isEqualTo(
                 """
                         package com.github.t1.jsonbap.impl;
                         
@@ -138,11 +174,10 @@ class JsonbSerializerGeneratorTest {
     }
 
     @Test
-    void shouldGenerateTransientWriter() {
+    void shouldGenerateTransientSerializer() {
         generate(TransientContainer.class);
 
-        then(ENV.getCreatedResource(SOURCE_OUTPUT, TransientContainer.class.getPackage().getName(),
-                "JsonbSerializerGeneratorTest$TransientContainer$$JsonbSerializer")).isEqualTo(
+        then(generated(TransientContainer.class)).isEqualTo(
                 """
                         package com.github.t1.jsonbap.impl;
                         
@@ -174,11 +209,10 @@ class JsonbSerializerGeneratorTest {
     }
 
     @Test
-    void shouldGenerateKebabCaseFieldWriter() {
+    void shouldGenerateKebabCaseFieldSerializer() {
         generate(KebabCaseFieldContainer.class);
 
-        then(ENV.getCreatedResource(SOURCE_OUTPUT, KebabCaseFieldContainer.class.getPackage().getName(),
-                "JsonbSerializerGeneratorTest$KebabCaseFieldContainer$$JsonbSerializer")).isEqualTo(
+        then(generated(KebabCaseFieldContainer.class)).isEqualTo(
                 """
                         package com.github.t1.jsonbap.impl;
                         
@@ -210,11 +244,10 @@ class JsonbSerializerGeneratorTest {
     }
 
     @Test
-    void shouldGenerateKebabCaseGetterWriter() {
+    void shouldGenerateKebabCaseGetterSerializer() {
         generate(KebabCaseGetterContainer.class);
 
-        then(ENV.getCreatedResource(SOURCE_OUTPUT, KebabCaseGetterContainer.class.getPackage().getName(),
-                "JsonbSerializerGeneratorTest$KebabCaseGetterContainer$$JsonbSerializer")).isEqualTo(
+        then(generated(KebabCaseGetterContainer.class)).isEqualTo(
                 """
                         package com.github.t1.jsonbap.impl;
                         
@@ -246,11 +279,10 @@ class JsonbSerializerGeneratorTest {
     }
 
     @Test
-    void shouldGenerateFormattedNumberWriter() {
+    void shouldGenerateFormattedNumberSerializer() {
         generate(FormattedNumberContainer.class);
 
-        then(ENV.getCreatedResource(SOURCE_OUTPUT, FormattedNumberContainer.class.getPackage().getName(),
-                "JsonbSerializerGeneratorTest$FormattedNumberContainer$$JsonbSerializer")).isEqualTo(
+        then(generated(FormattedNumberContainer.class)).isEqualTo(
                 """
                         package com.github.t1.jsonbap.impl;
                         
@@ -288,29 +320,11 @@ class JsonbSerializerGeneratorTest {
     }
 
     @Test
-    public void shouldFailToGenerateDuplicateProperty() {
+    public void shouldFailToGenerateDuplicateSerializer() {
         var messages = generator(DuplicateNameContainer.class);
 
         then(messages).containsExactly("Duplicate property name: field \"firstInstance\" and field \"secondInstance\"" +
                                        " in " + DuplicateNameContainer.class);
-    }
-
-    private static void generate(Class<?> serializableClass) {
-        var messages = generator(serializableClass);
-        then(messages).isEmpty();
-    }
-
-    private static List<String> generator(Class<?> serializableClass) {
-        var type = ENV.type(serializableClass);
-        var bindable = type.annotation(Bindable.class);
-        var generator = new JsonbSerializerGenerator(new JsonbapConfig(), type, new TypeConfig(bindable));
-        var className = generator.className();
-
-        try (var typeGenerator = new TypeGenerator(ENV.round(), type.getPackage(), className)) {
-            generator.generate(typeGenerator);
-        }
-
-        return ENV.getMessages(null, ERROR);
     }
 
     private static void generate(Class<?> serializableClass) {

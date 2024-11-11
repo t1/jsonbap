@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,7 @@ import static org.assertj.core.api.BDDAssertions.then;
 
 abstract class AbstractJsonIT {
     private static final int N = 10;
-    protected static final List<Person> DATA = IntStream.range(0, N)
+    public static final List<Person> DATA = IntStream.range(0, N)
             .mapToObj(AbstractJsonIT::person)
             .collect(toList());
     // narrow no-break space; used in French numbers as thousands-separator in JDK 13+
@@ -86,14 +87,14 @@ abstract class AbstractJsonIT {
                 .build();
     }
 
+    abstract String toJson(@SuppressWarnings("SameParameterValue") Object object);
+
     @Test
-    void shouldSerialize() {
+    void shouldSerializeListOfPerson() {
         var json = toJson(DATA);
 
         then(json).isEqualTo(repeatedJson(false));
     }
-
-    abstract String toJson(@SuppressWarnings("SameParameterValue") Object object);
 
     static String prettyPrint(String json) {
         var jsonValue = Json.createReader(new StringReader(json)).readValue();
@@ -105,11 +106,46 @@ abstract class AbstractJsonIT {
         return out.toString();
     }
 
+
+    abstract <T> T fromJson(String json, Type type);
+
     @Test void shouldDeserializeAddress() {
         var person = fromJson(addressJson(0, false), Address.class);
 
         then(person).usingRecursiveComparison().isEqualTo(address(0));
     }
 
-    abstract <T> T fromJson(String json, Class<T> type);
+    @Test void shouldDeserializePerson() {
+        var person = fromJson(cheat(json(0, false)), Person.class);
+
+        then(person).usingRecursiveComparison().isEqualTo(cheat(person(0)));
+    }
+
+    @Test void shouldDeserializeListOfPerson() throws Exception {
+        var list = fromJson(cheat(repeatedJson(false)), AbstractJsonIT.class.getField("DATA").getGenericType());
+
+        then(list).usingRecursiveComparison().isEqualTo(DATA.stream().map(this::cheat).toList());
+    }
+
+    @Test void shouldDeserializePersonWithNullValues() {
+        var person = fromJson("{" +
+                              "\"firstName\":null," +
+                              "\"lastName\":null," +
+                              "\"address\":null," +
+                              "\"formerAddress\":null," +
+                              //"\"pets\":null," +
+                              //"\"roles\":null," +
+                              "\"income\":null" +
+                              "}", Person.class);
+
+        then(person).usingRecursiveComparison().isEqualTo(cheat(new Person()));
+    }
+
+    String cheat(String json) {
+        return json
+                .replaceAll("\"pets\":\\[.*?],", "")
+                .replaceAll(" ", "").replaceAll("789,01", "789.01");
+    }
+
+    Person cheat(Person person) {return person;}
 }

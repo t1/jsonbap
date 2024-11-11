@@ -4,7 +4,6 @@ import com.github.t1.jsonbap.api.Bindable;
 import com.github.t1.jsonbap.test.Address;
 import com.github.t1.jsonbap.test.Cat;
 import com.github.t1.jsonbap.test.Dog;
-import com.github.t1.jsonbap.test.Person;
 import jakarta.json.Json;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
@@ -16,13 +15,13 @@ import jakarta.json.spi.JsonProvider;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
@@ -433,43 +432,7 @@ abstract class JsonbIT extends AbstractJsonIT {
         }
     }
 
-
-    @Test void shouldDeserializePerson() {
-        var person = fromJson(cheat(json(0, false)), Person.class);
-
-        then(person).usingRecursiveComparison().isEqualTo(cheat(person(0)));
-    }
-
-    @Test void shouldDeserializePersonWithNullValues() {
-        var person = fromJson("{" +
-                              "\"firstName\":null," +
-                              "\"lastName\":null," +
-                              "\"address\":null," +
-                              "\"formerAddress\":null," +
-                              //"\"pets\":null," +
-                              //"\"roles\":null," +
-                              "\"income\":null" +
-                              "}", Person.class);
-
-        then(person).usingRecursiveComparison().isEqualTo(cheat(new Person()));
-    }
-
-    String cheat(String json) {
-        return json
-                .replaceAll("\"pets\":\\[.*?],", "")
-                .replaceAll(" ", "").replaceAll("789,01", "789.01");
-    }
-
-    Person cheat(Person person) {return person;}
-
-    @Disabled("TODO implement deserialization of list values")
-    @Test void shouldDeserialize() {
-        var list = fromJson(repeatedJson(false), DATA.getClass());
-
-        then(list).isEqualTo(DATA);
-    }
-
-    @Override <T> T fromJson(String json, Class<T> type) {
+    @Override <T> T fromJson(String json, Type type) {
         try (var jsonb = jsonb(PLAIN)) {
             return jsonb.fromJson(json, type);
         } catch (Exception e) {

@@ -3,6 +3,7 @@ package com.github.t1.jsonbap.impl;
 import com.github.t1.exap.insight.AnnotationWrapper;
 import com.github.t1.exap.insight.Elemental;
 import com.github.t1.exap.insight.Type;
+import com.github.t1.exap.reflection.ReflectionProcessingEnvironment;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -36,6 +37,8 @@ class TypeProperty extends Property<Type> {
 
     @Override protected String propertyType() {return "type";}
 
+    @Override boolean isSettable() {return false;}
+
     @Override public String name() {
         var key = typeInfo.getStringProperty("key");
         return (key == null) ? "@type" : key;
@@ -46,9 +49,9 @@ class TypeProperty extends Property<Type> {
                          "must not also be defined as a field or getter");
     }
 
-    @Override protected String typeName() {return "String";}
+    @Override protected Type type() {return ReflectionProcessingEnvironment.ENV.type(String.class);}
 
-    @Override protected String valueExpression() {
+    @Override protected String readExpression() {
         var list = typeInfo.getAnnotationProperties("value");
         var alias = list.stream()
                 .filter(value -> {
@@ -60,5 +63,9 @@ class TypeProperty extends Property<Type> {
                 .map(value -> value.getStringProperty("alias"))
                 .orElseThrow();
         return '"' + alias + '"';
+    }
+
+    @Override protected String writeExpression(String value) {
+        throw new UnsupportedOperationException("the polymorphic type is never deserialized to a property");
     }
 }

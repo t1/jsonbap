@@ -24,9 +24,14 @@ public @interface Bindable {
     Class<?>[] value() default {};
 
     /**
-     * Should the serializer be generated?
+     * Should a serializer be generated?
      */
     boolean serializable() default true;
+
+    /**
+     * Should a deserializer be generated?
+     */
+    boolean deserializable() default true;
 
     PropertyNamingStrategyEnum propertyNamingStrategy() default IDENTITY;
 

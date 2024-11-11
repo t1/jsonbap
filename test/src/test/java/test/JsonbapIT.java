@@ -187,8 +187,11 @@ public class JsonbapIT extends JsonbIT {
     }
 
     @Disabled("not yet implemented")
-    @Test void shouldSerializeInvisibleElements() throws Exception {
-        super.shouldSerializeInvisibleElements();
+    @Test void shouldSerializeInvisibleElements() {
+    }
+
+    @Disabled("not yet implemented")
+    @Test void shouldDeserializeListOfPerson() {
     }
 
     @Override String cheat(String json) {

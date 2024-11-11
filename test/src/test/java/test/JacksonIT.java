@@ -2,7 +2,10 @@ package test;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.t1.jsonbap.test.Person;
 import lombok.SneakyThrows;
+
+import java.lang.reflect.Type;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 
@@ -19,7 +22,11 @@ class JacksonIT extends AbstractJsonIT {
     }
 
     @SneakyThrows(JacksonException.class)
-    @Override <T> T fromJson(String json, Class<T> type) {
-        return MAPPER.readValue(json, type);
+    @Override <T> T fromJson(String json, Type type) {
+        return MAPPER.readValue(json, MAPPER.constructType(type));
+    }
+
+    @Override Person cheat(Person person) {
+        return super.cheat(person).withPets(null);
     }
 }

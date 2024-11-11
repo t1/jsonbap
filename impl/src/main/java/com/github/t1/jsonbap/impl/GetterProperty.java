@@ -2,6 +2,7 @@ package com.github.t1.jsonbap.impl;
 
 import com.github.t1.exap.insight.Method;
 import com.github.t1.exap.insight.Type;
+import com.github.t1.jsonbap.runtime.ParserHelper;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -51,13 +52,20 @@ class GetterProperty extends Property<Method> {
 
     @Override protected String propertyType() {return "getter";}
 
+    @Override boolean isSettable() {
+        return elemental().getDeclaringType().hasMethod("set" + ParserHelper.titleCase(rawName()));
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     protected <T extends Property<?>> Either<T, String> or(T that) {
         return Either.<T, String>value((T) this).with(Property::isPublic, that);
     }
 
-    @Override protected String typeName() {return elemental().getReturnType().getFullName();}
+    @Override protected Type type() {return elemental().getReturnType();}
 
-    @Override protected String valueExpression() {return "object." + elemental.name() + "()";}
+    @Override protected String readExpression() {return "object." + elemental.name() + "()";}
+
+    @Override
+    protected String writeExpression(String value) {return "set" + ParserHelper.titleCase(rawName()) + "(" + value + ")";}
 }

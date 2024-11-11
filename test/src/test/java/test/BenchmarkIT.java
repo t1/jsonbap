@@ -38,7 +38,7 @@ public class BenchmarkIT {
 
     @Benchmark public void shouldSerializeJsonP() {run(new JsonPIT());}
 
-    private static void run(AbstractJsonIT it) {it.shouldSerialize();}
+    private static void run(AbstractJsonIT it) {it.shouldSerializeListOfPerson();}
 
     @Test void benchmark() throws Exception {new Runner(new OptionsBuilder().build()).run();}
 }

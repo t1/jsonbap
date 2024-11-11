@@ -1,5 +1,6 @@
 package test;
 
+import com.github.t1.jsonbap.test.Person;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.spi.JsonbProvider;
 import org.junit.jupiter.api.Disabled;
@@ -25,9 +26,14 @@ public class JohnzonIT extends JsonbIT {
     @Disabled("Johnzon doesn't support serializing Optional values")
     @Test void shouldSerializeOptionalList() {}
 
-    @Disabled("Johnzon doesn't support deserializing BigDecimal values")
-    @Test void shouldDeserializePerson() {}
+    // Johnzon doesn't properly support deserializing BigDecimal values
+    @Override String cheat(String json) {
+        return super.cheat(json)
+                .replace("\"income\":\"123456789.01\",", "");
+    }
 
-    @Disabled("Johnzon doesn't support deserializing BigDecimal values")
-    @Test void shouldDeserializePersonWithNullValues() {}
+    // Johnzon doesn't properly support deserializing BigDecimal and polymorphic values
+    @Override Person cheat(Person person) {
+        return super.cheat(person).withIncome(null).withPets(null);
+    }
 }

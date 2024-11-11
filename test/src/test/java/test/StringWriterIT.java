@@ -10,6 +10,7 @@ import lombok.SneakyThrows;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.Type;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
@@ -149,7 +150,7 @@ public class StringWriterIT extends AbstractJsonIT {
         out.append("}");
     }
 
-    @Override <T> T fromJson(String json, Class<T> type) {
+    @Override <T> T fromJson(String json, Type type) {
         assumeThat(true).describedAs("won't implement this").isFalse();
         return null;
     }

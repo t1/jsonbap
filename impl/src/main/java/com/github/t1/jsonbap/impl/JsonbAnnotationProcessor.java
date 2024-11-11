@@ -23,6 +23,9 @@ public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
         if (bindable.isEmpty() || bindable.get().getBooleanProperty("serializable")) {
             generateSerializerFor(type);
         }
+        if (bindable.isEmpty() || bindable.get().getBooleanProperty("deserializable")) {
+            generateDeserializerFor(type);
+        }
 
         bindable.ifPresent(bindable_ -> bindable_.getTypeProperties("value")
                 .forEach(this::process));
@@ -35,6 +38,16 @@ public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
             generator.generate(typeGenerator);
         } catch (SourceAlreadyExistsException e) {
             type.warning("serializer already exists: " + e.getSourceName());
+        }
+    }
+
+    private void generateDeserializerFor(Type type) {
+        var generator = new JsonbDeserializerGenerator(config, type);
+        type.note("generate " + generator.className());
+        try (var typeGenerator = type.getPackage().openTypeGenerator(generator.className())) {
+            generator.generate(typeGenerator);
+        } catch (SourceAlreadyExistsException e) {
+            type.warning("deserializer already exists: " + e.getSourceName());
         }
     }
 }

@@ -7,6 +7,7 @@ import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.impl.Property.JsonbAnnotations.AnnotationWithSource;
 import com.github.t1.jsonbap.runtime.DateTimeWriter;
 import com.github.t1.jsonbap.runtime.NullWriter;
+import com.github.t1.jsonbap.runtime.ParserHelper;
 import jakarta.json.bind.annotation.JsonbDateFormat;
 import jakarta.json.bind.annotation.JsonbNillable;
 import jakarta.json.bind.annotation.JsonbNumberFormat;
@@ -29,9 +30,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.github.t1.jsonbap.runtime.ParserHelper.titleCase;
 import static java.util.stream.Collectors.joining;
 
 abstract class Property<T extends Elemental> implements Comparable<Property<?>> {
+
     private static final Comparator<Property<?>> COMPARATOR = Comparator.comparing(Property::name);
 
     /**
@@ -67,6 +70,8 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
     public @NonNull T elemental() {return elemental;}
 
     boolean isPublic() {return elemental().isPublic();}
+
+    abstract boolean isSettable();
 
     boolean isTransient() {return isTransient || annotations().jsonbTransient.isPresent();}
 
@@ -116,11 +121,8 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             case LOWER_CASE_WITH_DASHES -> raw.replaceAll("([a-z])([A-Z])", "$1-$2").toLowerCase();
             case LOWER_CASE_WITH_UNDERSCORES -> raw.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
             case UPPER_CASE_WITH_UNDERSCORES -> raw.replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
-            case UPPER_CAMEL_CASE -> raw.substring(0, 1).toUpperCase() + raw.substring(1);
-            case UPPER_CAMEL_CASE_WITH_SPACES -> {
-                var name = raw.replaceAll("([a-z])([A-Z])", "$1 $2");
-                yield name.substring(0, 1).toUpperCase() + name.substring(1);
-            }
+            case UPPER_CAMEL_CASE -> titleCase(raw);
+            case UPPER_CAMEL_CASE_WITH_SPACES -> titleCase(raw.replaceAll("([a-z])([A-Z])", "$1 $2"));
         });
     }
 
@@ -186,12 +188,18 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     protected abstract <V extends Property<?>> Either<V, String> or(V that);
 
-    final void write(TypeGenerator typeGenerator, StringBuilder out) {new PropertyWriter(typeGenerator, out).write();}
+    final void writeSerializer(TypeGenerator typeGenerator, StringBuilder out) {new PropertySerializerWriter(typeGenerator, out).write();}
+
+    final void writeDeserializer(TypeGenerator typeGenerator, StringBuilder out, boolean useBuilder) {
+        new PropertyDeserializerWriter(typeGenerator, out, useBuilder).write();
+    }
 
 
-    protected abstract String typeName();
+    protected abstract Type type();
 
-    protected abstract String valueExpression();
+    protected abstract String readExpression();
+
+    protected abstract String writeExpression(String value);
 
     record JsonbAnnotations(
             Optional<AnnotationWithSource<JsonbTransient>> jsonbTransient,
@@ -266,12 +274,13 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
             public ElementalKind sourceKind() {return source.kind();}
 
+            @SuppressWarnings("BooleanMethodIsAlwaysInverted")
             public boolean is(Class<?> type) {return type.isInstance(annotation);}
         }
     }
 
     @RequiredArgsConstructor
-    private class PropertyWriter {
+    private class PropertySerializerWriter {
         private final TypeGenerator typeGenerator;
         private final StringBuilder out;
 
@@ -314,13 +323,13 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             jsonbVisibility().ifPresent(jsonbVisibility -> writeComment("visibility from " + jsonbVisibility));
             // TODO call the visibility strategy to find out, if we should write this property at all
 
-            if (PRIMITIVE_TYPES.contains(typeName()) && jsonbNumberFormat().isEmpty()) {
-                writeDirect(valueExpression());
+            if (PRIMITIVE_TYPES.contains(type().getSimpleName()) && jsonbNumberFormat().isEmpty()) {
+                writeDirect(readExpression());
             } else {
                 jsonbNumberFormat().ifPresent(jsonbNumberFormat -> writeComment("number format from " + jsonbNumberFormat));
                 jsonbDateFormat().ifPresent(jsonbDateFormat -> writeComment("date format from " + jsonbDateFormat));
 
-                var valueExpression = formatted(valueExpression());
+                var valueExpression = formatted(readExpression());
                 if (isNillableFalse()) {
                     writeViaNullWriter(valueExpression, "writeNullable");
                 } else if (isNillable()) {
@@ -339,7 +348,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
          */
         private void writeDirect(String valueExpression) {
             out.append("        out.write(\"");
-            writeName();
+            out.append(name());
             out.append("\", ").append(valueExpression).append(");\n");
         }
 
@@ -420,10 +429,81 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
          */
         private void writeViaContext(String valueExpression) {
             out.append("        context.serialize(\"");
-            writeName();
+            out.append(name());
             out.append("\", ").append(valueExpression).append(", out);\n");
         }
+    }
 
-        private void writeName() {out.append(name());}
+    @RequiredArgsConstructor
+    private class PropertyDeserializerWriter {
+        private final TypeGenerator typeGenerator;
+        private final StringBuilder out;
+        private final boolean useBuilder;
+
+        public void write() {
+            if (!isSettable()) {
+                writeComment(Property.this + " is not settable");
+            } else if (isTransient()) {
+                var transientMessage = Property.this + " is transient" + transientSourceMessage();
+                writeComment(transientMessage);
+                annotations().all().filter(annotation -> !annotation.is(JsonbTransient.class)).findAny()
+                        .ifPresent(a -> elementalError(transientMessage + " but also annotated " + a));
+            } else if (!isPublic()) {
+                writeComment(Property.this + " is not public");
+            } else {
+                writeField();
+            }
+            //elementalErrors.forEach(this::writeError);
+        }
+
+        /// Even if we don't fail the build at compile time (due to the `throwJsonbExceptionsAtRuntime` config option),
+        /// we still create code that throws a `JsonbException` at runtime... as required by the spec.
+        private void writeError(String message) {
+            typeGenerator.addImport("jakarta.json.bind.JsonbException");
+            // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
+            out.append("        if (true) throw new JsonbException(\"")
+                    .append(message.replace("\"", "\\\""))
+                    .append("\");\n");
+
+        }
+
+        private String transientSourceMessage() {
+            if (isTransient && Property.this instanceof GetterProperty) return " from underlying field";
+            return annotations().jsonbTransient.map(a -> " from " + a).orElse("");
+        }
+
+        private void writeField() {
+            if (annotatedName().isPresent())
+                writeComment("name from JsonbProperty annotation");
+            else if (derivedName().isPresent())
+                writeComment("name derived from " + propertyType() + " name with strategy " + typeConfig.propertyNamingStrategy());
+
+            jsonbVisibility().ifPresent(jsonbVisibility -> writeComment("visibility from " + jsonbVisibility));
+            // TODO call the visibility strategy to find out, if we should read this property at all
+
+            out.append("                case \"")
+                    .append(name())
+                    .append("\" -> ");
+            var readMethod = ParserHelper.readMethod(type().getSimpleName());
+            if (readMethod.isPresent()) {
+                out.append("parser.").append(readMethod.get()).append("().ifPresent(");
+                if (useBuilder) {
+                    out.append("object::").append(rawName());
+                } else {
+                    out.append("value -> object.").append(writeExpression("value"));
+                }
+                out.append(")");
+            } else {
+                var nestedExpression = "ctx.deserialize(" + type().getSimpleName() + ".class, jsonParser)";
+                if (useBuilder) {
+                    out.append("object.").append(rawName()).append("(").append(nestedExpression).append(")");
+                } else {
+                    out.append("object.").append(writeExpression(nestedExpression));
+                }
+            }
+            out.append(";\n");
+        }
+
+        private void writeComment(String message) {out.append("        // ").append(message).append("\n");}
     }
 }
