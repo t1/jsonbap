@@ -110,7 +110,7 @@ public final class FluentParser {
         };
     }
 
-    public Optional<BigDecimal> BigDecimal() {
+    public Optional<BigDecimal> readBigDecimal() {
         return switch (parser.currentEvent()) {
             case VALUE_NULL -> Optional.empty();
             case VALUE_NUMBER -> Optional.of(parser.getBigDecimal());

@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.PriorityQueueCo
 
 import java.util.PriorityQueue;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$39 extends PriorityQueueContainer {
     public CollectionsMappingTest$39(CollectionsMappingTest ignoreUnused, PriorityQueue<String> instance) {
         setInstance(instance);

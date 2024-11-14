@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.TreeSetContaine
 
 import java.util.TreeSet;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$13 extends TreeSetContainer {
     public CollectionsMappingTest$13(CollectionsMappingTest ignoreUnused, TreeSet<String> instance) {
         setInstance(instance);

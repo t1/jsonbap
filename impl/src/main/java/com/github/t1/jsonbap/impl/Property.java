@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
 import static com.github.t1.jsonbap.runtime.FluentParser.titleCase;
 import static java.util.stream.Collectors.joining;
+import static javax.lang.model.type.TypeKind.DECLARED;
 
 abstract class Property<T extends Elemental> implements Comparable<Property<?>> {
 
@@ -48,9 +49,9 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             "double",
             "boolean");
 
-    protected final JsonbapConfig jsonbapConfig;
-    protected final TypeConfig typeConfig;
-    protected final T elemental;
+    private final JsonbapConfig jsonbapConfig;
+    private final TypeConfig typeConfig;
+    private final T elemental;
     private final List<String> elementalErrors = new ArrayList<>();
     private JsonbAnnotations annotations;
     private boolean isTransient;
@@ -496,6 +497,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                 }
                 out.append(")");
             } else {
+                typeToImport(typeToDeserialize).ifPresent(typeGenerator::addImport);
                 var nestedExpression = "ctx.deserialize(" + typeToDeserialize.getSimpleName() + ".class, jsonParser)";
                 if (useBuilder) {
                     out.append("object.").append(rawName()).append("(").append(nestedExpression).append(")");
@@ -504,6 +506,13 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                 }
             }
             out.append(";\n");
+        }
+
+        private Optional<Type> typeToImport(Type typeToDeserialize) {
+            if (typeToDeserialize.isArray()) typeToDeserialize = typeToDeserialize.elementType();
+            return typeToDeserialize.isPrimitive() || typeToDeserialize.getKind() != DECLARED
+                   || typeToDeserialize.getPackage().name().startsWith("java.lang.")
+                    ? Optional.empty() : Optional.of(typeToDeserialize);
         }
 
         private Type typeToDeserialize() {

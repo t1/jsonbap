@@ -4,7 +4,7 @@ import com.github.t1.jsonbap.api.Bindable;
 
 import java.util.HashMap;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$16 extends HashMap<String, String> {
     public CollectionsMappingTest$16(CollectionsMappingTest ignore) {
         put("string1", "Test 1");

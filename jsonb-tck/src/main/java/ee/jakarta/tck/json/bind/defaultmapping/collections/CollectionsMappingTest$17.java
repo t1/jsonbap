@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.MapContainer;
 
 import java.util.HashMap;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$17 extends MapContainer {
     public CollectionsMappingTest$17(CollectionsMappingTest ignoreUnused, HashMap<String, String> instance) {
         setInstance(instance);

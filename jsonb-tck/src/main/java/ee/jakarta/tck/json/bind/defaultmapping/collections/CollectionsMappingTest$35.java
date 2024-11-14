@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.ArrayDequeConta
 
 import java.util.ArrayDeque;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$35 extends ArrayDequeContainer {
     public CollectionsMappingTest$35(CollectionsMappingTest ignoreUnused, ArrayDeque<String> instance) {
         setInstance(instance);

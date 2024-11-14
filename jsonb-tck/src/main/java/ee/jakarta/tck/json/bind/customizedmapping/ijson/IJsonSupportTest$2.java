@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.customizedmapping.ijson.model.CalendarContainer;
 
 import java.util.Calendar;
 
-@Bindable
+@Bindable(deserializable = false)
 public class IJsonSupportTest$2 extends CalendarContainer {
     public IJsonSupportTest$2(IJsonSupportTest ignoreUnused, Calendar calendarProperty) {
         setInstance(calendarProperty);

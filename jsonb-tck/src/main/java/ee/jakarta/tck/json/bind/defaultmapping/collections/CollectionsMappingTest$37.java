@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.QueueContainer;
 
 import java.util.Queue;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$37 extends QueueContainer {
     public CollectionsMappingTest$37(CollectionsMappingTest ignoreUnused, Queue<String> instance) {
         setInstance(instance);

@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.ArrayListContai
 
 import java.util.ArrayList;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$29 extends ArrayListContainer {
     public CollectionsMappingTest$29(CollectionsMappingTest ignoreUnused, ArrayList<String> instance) {
         setInstance(instance);

@@ -3,7 +3,7 @@ package ee.jakarta.tck.json.bind.defaultmapping.untyped;
 import com.github.t1.jsonbap.api.Bindable;
 
 @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "unused"})
-@Bindable
+@Bindable(deserializable = false)
 public class UntypedMappingTest$1 {
     public UntypedMappingTest$1(UntypedMappingTest ignoreUnused) {
     }

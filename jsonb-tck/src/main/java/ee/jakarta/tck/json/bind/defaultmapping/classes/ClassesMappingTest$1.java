@@ -2,7 +2,7 @@ package ee.jakarta.tck.json.bind.defaultmapping.classes;
 
 import com.github.t1.jsonbap.api.Bindable;
 
-@Bindable
+@Bindable(deserializable = false)
 public class ClassesMappingTest$1 {
     public ClassesMappingTest$1(ClassesMappingTest ignoreUnused) {
     }

@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.customizedmapping.dateformat.model.customized.Cu
 
 import java.util.Date;
 
-@Bindable
+@Bindable(deserializable = false)
 public class DateFormatCustomizationTest$6 extends CustomizedPackageDateContainer {
     public DateFormatCustomizationTest$6(DateFormatCustomizationTest ignoredUnused, Date instance) {
         setInstance(instance);

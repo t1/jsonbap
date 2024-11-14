@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.SortedSetContai
 
 import java.util.SortedSet;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$11 extends SortedSetContainer {
     public CollectionsMappingTest$11(CollectionsMappingTest ignoreUnused, SortedSet<String> instance) {
         setInstance(instance);

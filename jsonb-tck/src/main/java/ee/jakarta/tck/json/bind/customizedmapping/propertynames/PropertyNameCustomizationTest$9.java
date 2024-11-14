@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.customizedmapping.propertynames.model.StringCont
 
 import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.UPPER_CAMEL_CASE;
 
-@Bindable(propertyNamingStrategy = UPPER_CAMEL_CASE)
+@Bindable(propertyNamingStrategy = UPPER_CAMEL_CASE, deserializable = false)
 public class PropertyNameCustomizationTest$9 extends StringContainer {
     public PropertyNameCustomizationTest$9(PropertyNameCustomizationTest ignoreUnused) {
         setStringInstance("Test String");

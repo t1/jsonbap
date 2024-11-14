@@ -4,7 +4,7 @@ import com.github.t1.jsonbap.api.Bindable;
 
 import java.util.LinkedHashMap;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$24 extends LinkedHashMap<String, String> {
     public CollectionsMappingTest$24(CollectionsMappingTest ignore) {
         put("string1", "Test 1");

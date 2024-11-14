@@ -211,7 +211,7 @@ public class JsonPIT extends AbstractJsonIT {
                 case "roles" -> parser.assume(START_ARRAY).skipArray(); // TODO
                 case "registrationTimestamp" -> parser.readLong().ifPresent(builder::registrationTimestamp);
                 case "pets" -> parser.assume(START_ARRAY).skipArray(); // TODO
-                case "income" -> parser.BigDecimal().ifPresent(builder::income);
+                case "income" -> parser.readBigDecimal().ifPresent(builder::income);
             }
         }
         parser.assume(END_OBJECT);

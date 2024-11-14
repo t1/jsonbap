@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.NavigableMapCon
 
 import java.util.NavigableMap;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$19 extends NavigableMapContainer {
     public CollectionsMappingTest$19(CollectionsMappingTest ignoreUnused, NavigableMap<String, String> instance) {
         setInstance(instance);

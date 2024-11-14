@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.customizedmapping.propertynames.model.StringCont
 
 import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.UPPER_CAMEL_CASE_WITH_SPACES;
 
-@Bindable(propertyNamingStrategy = UPPER_CAMEL_CASE_WITH_SPACES)
+@Bindable(propertyNamingStrategy = UPPER_CAMEL_CASE_WITH_SPACES, deserializable = false)
 public class PropertyNameCustomizationTest$10 extends StringContainer {
     public PropertyNameCustomizationTest$10(PropertyNameCustomizationTest ignoreUnused) {
         setStringInstance("Test String");

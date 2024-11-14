@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.LinkedListConta
 
 import java.util.LinkedList;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$31 extends LinkedListContainer {
     public CollectionsMappingTest$31(CollectionsMappingTest ignoreUnused, LinkedList<String> instance) {
         setInstance(instance);

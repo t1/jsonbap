@@ -4,7 +4,7 @@ import com.github.t1.jsonbap.api.Bindable;
 
 import java.util.ArrayList;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$26 extends ArrayList<String> {
     public CollectionsMappingTest$26(CollectionsMappingTest ignoreUnused) {
         add("Test 1");

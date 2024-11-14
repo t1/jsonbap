@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.customizedmapping.dateformat.model.AnnotatedFiel
 
 import java.util.Date;
 
-@Bindable
+@Bindable(deserializable = false)
 public class DateFormatCustomizationTest$4 extends AnnotatedFieldDateContainer {
     public DateFormatCustomizationTest$4(DateFormatCustomizationTest ignoredUnused, Date instance) {
         setInstance(instance);

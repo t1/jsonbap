@@ -4,7 +4,7 @@ import com.github.t1.jsonbap.api.Bindable;
 
 import java.util.ArrayDeque;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$32 extends ArrayDeque<String> {
     public CollectionsMappingTest$32(CollectionsMappingTest ignoreUnused) {
         add("Test 1");

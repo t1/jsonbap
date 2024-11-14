@@ -29,7 +29,7 @@ public class Person$$JsonbDeserializer implements JsonbDeserializer<Person> {
                 case "roles" -> builder.roles(Stream.of(ctx.deserialize(String[].class, jsonParser)).toList());
                 case "registrationTimestamp" -> parser.readLong().ifPresent(builder::registrationTimestamp);
                 case "pets" -> Stream.of(ctx.deserialize(Pet[].class, jsonParser)).forEach(builder::pet);
-                case "income" -> parser.BigDecimal().ifPresent(builder::income);
+                case "income" -> parser.readBigDecimal().ifPresent(builder::income);
             }
         }
         parser.assume(Event.END_OBJECT);

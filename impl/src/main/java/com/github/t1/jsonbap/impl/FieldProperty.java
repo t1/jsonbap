@@ -21,7 +21,7 @@ class FieldProperty extends Property<Field> {
 
     @Override protected String propertyType() {return "field";}
 
-    @Override boolean isSettable() {return isPublic();}
+    @Override boolean isSettable() {return isPublic() && !elemental().isFinal();}
 
     @Override
     @SuppressWarnings("unchecked")

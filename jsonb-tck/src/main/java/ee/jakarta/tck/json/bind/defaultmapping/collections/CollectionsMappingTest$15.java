@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.LinkedHashSetCo
 
 import java.util.LinkedHashSet;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$15 extends LinkedHashSetContainer {
     public CollectionsMappingTest$15(CollectionsMappingTest ignoreUnused, LinkedHashSet<String> instance) {
         setInstance(instance);

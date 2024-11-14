@@ -64,7 +64,7 @@ class GetterProperty extends Property<Method> {
 
     @Override protected Type type() {return elemental().getReturnType();}
 
-    @Override protected String readExpression() {return "object." + elemental.name() + "()";}
+    @Override protected String readExpression() {return "object." + elemental().name() + "()";}
 
     @Override
     protected String writeExpression(String value) {return "set" + FluentParser.titleCase(rawName()) + "(" + value + ")";}

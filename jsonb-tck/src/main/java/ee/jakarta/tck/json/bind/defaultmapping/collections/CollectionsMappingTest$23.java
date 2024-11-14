@@ -5,7 +5,7 @@ import ee.jakarta.tck.json.bind.defaultmapping.collections.model.TreeMapContaine
 
 import java.util.TreeMap;
 
-@Bindable
+@Bindable(deserializable = false)
 public class CollectionsMappingTest$23 extends TreeMapContainer {
     public CollectionsMappingTest$23(CollectionsMappingTest ignoreUnused, TreeMap<String, String> instance) {
         setInstance(instance);
