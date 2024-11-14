@@ -23,35 +23,35 @@ In principle, this works very similar to https://github.com/ngs-doo/dsl-json[DSL
 
 == Benchmark
 
-Careful: these benchmarks seem to be completely wrong.
+I tried to do some benchmarks, but the results are obviously completely wrong.
 
-|===
-|Benchmark |Score |Error
-
-|Jackson
-|117.626
-|±  1.286
-
-|Johnzon
-|209.336
-|±  9.924
-
-|JsonP
-|1775.570
-|± 18.056
-
-|Jsonbap
-|146.648
-|±  1.126
-
-|StringWriter
-|142.689
-|±  3.918
-
-|Yasson
-|360.094
-|± 26.499
-|===
+// |===
+// |Benchmark |Score |Error
+//
+// |Jackson
+// |117.626
+// |±  1.286
+//
+// |Johnzon
+// |209.336
+// |±  9.924
+//
+// |JsonP
+// |1775.570
+// |± 18.056
+//
+// |Jsonbap
+// |146.648
+// |±  1.126
+//
+// |StringWriter
+// |142.689
+// |±  3.918
+//
+// |Yasson
+// |360.094
+// |± 26.499
+// |===
 
 == Limitations
 
