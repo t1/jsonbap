@@ -1,6 +1,6 @@
 package com.github.t1.jsonbap.test;
 
-import com.github.t1.jsonbap.runtime.ParserHelper;
+import com.github.t1.jsonbap.runtime.FluentParser;
 import jakarta.json.bind.serializer.DeserializationContext;
 import jakarta.json.bind.serializer.JsonbDeserializer;
 import jakarta.json.stream.JsonParser;
@@ -13,7 +13,7 @@ import static jakarta.json.stream.JsonParser.Event;
 @SuppressWarnings("unused")
 public class Person$$JsonbDeserializer implements JsonbDeserializer<Person> {
     @Override public Person deserialize(JsonParser jsonParser, DeserializationContext ctx, Type rtType) {
-        var parser = new ParserHelper(jsonParser);
+        var parser = new FluentParser(jsonParser);
         if (parser.is(Event.VALUE_NULL)) return null;
         var builder = Person.builder();
         parser.assume(Event.START_OBJECT);

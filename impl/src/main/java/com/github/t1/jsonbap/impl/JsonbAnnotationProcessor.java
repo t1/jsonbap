@@ -48,6 +48,8 @@ public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
             generator.generate(typeGenerator);
         } catch (SourceAlreadyExistsException e) {
             type.warning("deserializer already exists: " + e.getSourceName());
+        } catch (RuntimeException e) {
+            throw new RuntimeException("can't generate deserializer for " + type, e);
         }
     }
 }

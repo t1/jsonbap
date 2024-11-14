@@ -6,8 +6,8 @@ import com.github.t1.exap.insight.ElementalKind;
 import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.impl.Property.JsonbAnnotations.AnnotationWithSource;
 import com.github.t1.jsonbap.runtime.DateTimeWriter;
+import com.github.t1.jsonbap.runtime.FluentParser;
 import com.github.t1.jsonbap.runtime.NullWriter;
-import com.github.t1.jsonbap.runtime.ParserHelper;
 import jakarta.json.bind.annotation.JsonbDateFormat;
 import jakarta.json.bind.annotation.JsonbNillable;
 import jakarta.json.bind.annotation.JsonbNumberFormat;
@@ -30,7 +30,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.github.t1.jsonbap.runtime.ParserHelper.titleCase;
+import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
+import static com.github.t1.jsonbap.runtime.FluentParser.titleCase;
 import static java.util.stream.Collectors.joining;
 
 abstract class Property<T extends Elemental> implements Comparable<Property<?>> {
@@ -484,7 +485,8 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             out.append("                case \"")
                     .append(name())
                     .append("\" -> ");
-            var readMethod = ParserHelper.readMethod(type().getSimpleName());
+            var typeToDeserialize = typeToDeserialize();
+            var readMethod = FluentParser.readMethod(typeToDeserialize.getSimpleName());
             if (readMethod.isPresent()) {
                 out.append("parser.").append(readMethod.get()).append("().ifPresent(");
                 if (useBuilder) {
@@ -494,7 +496,7 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                 }
                 out.append(")");
             } else {
-                var nestedExpression = "ctx.deserialize(" + type().getSimpleName() + ".class, jsonParser)";
+                var nestedExpression = "ctx.deserialize(" + typeToDeserialize.getSimpleName() + ".class, jsonParser)";
                 if (useBuilder) {
                     out.append("object.").append(rawName()).append("(").append(nestedExpression).append(")");
                 } else {
@@ -502,6 +504,18 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                 }
             }
             out.append(";\n");
+        }
+
+        private Type typeToDeserialize() {
+            var type = type();
+            if ("java.util.Optional<java.lang.String>[]".equals(type.getFullName())) {
+                return ENV.type(String.class);
+            }
+            // if (type.isA(Optional.class)) { // TODO fails with NPE?!?
+            if (type.getFullName().startsWith("java.util.Optional<") && type.getFullName().endsWith(">")) {
+                type = type.getTypeParameters().getFirst();
+            }
+            return type;
         }
 
         private void writeComment(String message) {out.append("        // ").append(message).append("\n");}

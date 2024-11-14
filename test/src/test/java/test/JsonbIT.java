@@ -1,6 +1,7 @@
 package test;
 
 import com.github.t1.jsonbap.api.Bindable;
+import com.github.t1.jsonbap.runtime.TypeLiteral;
 import com.github.t1.jsonbap.test.Address;
 import com.github.t1.jsonbap.test.Cat;
 import com.github.t1.jsonbap.test.Dog;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.github.t1.jsonbap.runtime.TypeLiteral.genericType;
 import static org.assertj.core.api.BDDAssertions.then;
 import static test.JsonbIT.Invisibilities.InvisibilitiesStrategy;
 import static test.JsonbIT.Product.PRODUCT;
@@ -143,184 +145,149 @@ abstract class JsonbIT extends AbstractJsonIT {
         then(outputStream.toString()).isEqualTo(repeatedJson(false));
     }
 
-    @Test void shouldSerializeNull() throws Exception {
-        try (var jsonb = jsonb()) {
+    @Test void shouldSerializeNull() {
+        var json = toJson(null);
 
-            var json = jsonb.toJson(null);
-
-            then(json).isEqualTo("null");
-        }
+        then(json).isEqualTo("null");
     }
 
-    @Test void shouldSerializeJsonValues() throws Exception {
-        try (var jsonb = jsonb()) {
+    @Test void shouldSerializeJsonValues() {
+        var json = toJson(Json.createObjectBuilder()
+                        .add("string", Json.createValue("foo"))
+                        .add("int", Json.createValue(123))
+                        .add("long", Json.createValue(123456789012345L))
+                        .add("double", Json.createValue(12345.6789d))
+                        .add("bigDecimal", Json.createValue(BigDecimal.valueOf(123.456d)))
+                        .add("bigInteger", Json.createValue(BigInteger.TEN))
+                        .add("array", Json.createArrayBuilder(List.of(1, 2, 3)))
+                        .build(),
+                FORMATTING);
 
-            var json = jsonb.toJson(Json.createObjectBuilder()
-                    .add("string", Json.createValue("foo"))
-                    .add("int", Json.createValue(123))
-                    .add("long", Json.createValue(123456789012345L))
-                    .add("double", Json.createValue(12345.6789d))
-                    .add("bigDecimal", Json.createValue(BigDecimal.valueOf(123.456d)))
-                    .add("bigInteger", Json.createValue(BigInteger.TEN))
-                    .add("array", Json.createArrayBuilder(List.of(1, 2, 3)))
-                    .build());
+        then(json).isEqualTo("""
+                {
+                    "string": "foo",
+                    "int": 123,
+                    "long": 123456789012345,
+                    "double": 12345.6789,
+                    "bigDecimal": 123.456,
+                    "bigInteger": 10,
+                    "array": [
+                        1,
+                        2,
+                        3
+                    ]
+                }""");
+    }
 
-            then(json).isEqualTo("""
+    @Test void shouldSerializeBigInteger() {
+        var json = toJson(new BigInteger("12345678901234567890"));
+
+        then(json).isEqualTo("12345678901234567890");
+    }
+
+    @Test void shouldSerializeBigDecimal() {
+        var json = toJson(new BigDecimal("123456789012345678901234567890123456789.123"));
+
+        then(json).isEqualTo("123456789012345678901234567890123456789.123");
+    }
+
+    @Test void shouldSerializeLong() {
+        var json = toJson(123456L);
+
+        then(json).isEqualTo("123456");
+    }
+
+    @Test void shouldSerializeDouble() {
+        var json = toJson(123.456d);
+
+        then(json).isEqualTo("123.456");
+    }
+
+    @Test void shouldSerializeBoolean() {
+        var json = toJson(true);
+
+        then(json).isEqualTo("true");
+    }
+
+    @Test void shouldSerializeListWithNullWithNullValues() {
+        var people = new java.util.ArrayList<Address>();
+        people.add(address(0));
+        people.add(null);
+        people.add(address(2));
+        var json = toJson(people, FORMATTING_AND_NULL_VALUES);
+
+        then(json).isEqualTo("""
+                [
                     {
-                        "string": "foo",
-                        "int": 123,
-                        "long": 123456789012345,
-                        "double": 12345.6789,
-                        "bigDecimal": 123.456,
-                        "bigInteger": 10,
-                        "array": [
-                            1,
-                            2,
-                            3
-                        ]
-                    }""");
-        }
+                        "city": "Somewhere-0",
+                        "country": null,
+                        "state": null,
+                        "street": "12000 Main Street",
+                        "zip": 50000
+                    },
+                    null,
+                    {
+                        "city": "Somewhere-2",
+                        "country": null,
+                        "state": null,
+                        "street": "12002 Main Street",
+                        "zip": 50002
+                    }
+                ]""");
     }
 
-    @Test void shouldSerializeBigInteger() throws Exception {
-        try (var jsonb = jsonb()) {
+    @Test void shouldSerializeListWithNullNoNullValues() {
+        var people = new java.util.ArrayList<Address>();
+        people.add(address(0));
+        people.add(null);
+        people.add(address(2));
+        var json = toJson(people, FORMATTING);
 
-            var json = jsonb.toJson(new BigInteger("12345678901234567890"));
-
-            then(json).isEqualTo("12345678901234567890");
-        }
+        then(json).isEqualTo("""
+                [
+                    {
+                        "city": "Somewhere-0",
+                        "street": "12000 Main Street",
+                        "zip": 50000
+                    },
+                    null,
+                    {
+                        "city": "Somewhere-2",
+                        "street": "12002 Main Street",
+                        "zip": 50002
+                    }
+                ]""");
     }
 
-    @Test void shouldSerializeBigDecimal() throws Exception {
-        try (var jsonb = jsonb()) {
+    @Test void shouldSerializeSubtypeCat() {
+        var json = toJson(new Cat());
 
-            var json = jsonb.toJson(new BigDecimal("123456789012345678901234567890123456789.123"));
-
-            then(json).isEqualTo("123456789012345678901234567890123456789.123");
-        }
+        then(json).isEqualTo("{\"@type\":\"cat\",\"isCat\":true}");
     }
 
-    @Test void shouldSerializeLong() throws Exception {
-        try (var jsonb = jsonb()) {
+    @Test void shouldSerializeSubtypeDog() {
+        var json = toJson(new Dog());
 
-            var json = jsonb.toJson(123456L);
-
-            then(json).isEqualTo("123456");
-        }
+        then(json).isEqualTo("{\"@type\":\"dog\",\"isDog\":true}");
     }
 
-    @Test void shouldSerializeDouble() throws Exception {
-        try (var jsonb = jsonb()) {
+    @Test void shouldSerializeAnimalList() {
+        var list = List.of(new Cat("tabula"), new Dog("rasa"));
+        var json = toJson(list, FORMATTING);
 
-            var json = jsonb.toJson(123.456d);
-
-            then(json).isEqualTo("123.456");
-        }
-    }
-
-    @Test void shouldSerializeBoolean() throws Exception {
-        try (var jsonb = jsonb()) {
-
-            var json = jsonb.toJson(true);
-
-            then(json).isEqualTo("true");
-        }
-    }
-
-    @Test void shouldSerializeListWithNullWithNullValues() throws Exception {
-        try (var jsonb = jsonb()) {
-
-            var people = new java.util.ArrayList<Address>();
-            people.add(address(0));
-            people.add(null);
-            people.add(address(2));
-            var json = jsonb.toJson(people);
-
-            then(json).isEqualTo("""
-                    [
-                        {
-                            "city": "Somewhere-0",
-                            "country": null,
-                            "state": null,
-                            "street": "12000 Main Street",
-                            "zip": 50000
-                        },
-                        null,
-                        {
-                            "city": "Somewhere-2",
-                            "country": null,
-                            "state": null,
-                            "street": "12002 Main Street",
-                            "zip": 50002
-                        }
-                    ]""");
-        }
-    }
-
-    @Test void shouldSerializeListWithNullNoNullValues() throws Exception {
-        try (var jsonb = jsonb(FORMATTING)) {
-
-            var people = new java.util.ArrayList<Address>();
-            people.add(address(0));
-            people.add(null);
-            people.add(address(2));
-            var json = jsonb.toJson(people);
-
-            then(json).isEqualTo("""
-                    [
-                        {
-                            "city": "Somewhere-0",
-                            "street": "12000 Main Street",
-                            "zip": 50000
-                        },
-                        null,
-                        {
-                            "city": "Somewhere-2",
-                            "street": "12002 Main Street",
-                            "zip": 50002
-                        }
-                    ]""");
-        }
-    }
-
-    @Test void shouldSerializeSubtypeCat() throws Exception {
-        try (var jsonb = jsonb(PLAIN)) {
-
-            var json = jsonb.toJson(new Cat());
-
-            then(json).isEqualTo("{\"@type\":\"cat\",\"isCat\":true}");
-        }
-    }
-
-    @Test void shouldSerializeSubtypeDog() throws Exception {
-        try (var jsonb = jsonb(PLAIN)) {
-
-            var json = jsonb.toJson(new Dog());
-
-            then(json).isEqualTo("{\"@type\":\"dog\",\"isDog\":true}");
-        }
-    }
-
-    @Test void shouldSerializeAnimalList() throws Exception {
-        try (var jsonb = jsonb()) {
-
-            var list = List.of(new Cat("tabula"), new Dog("rasa"));
-            var json = jsonb.toJson(list);
-
-            then(json).isEqualTo("""
-                    [
-                        {
-                            "@type": "cat",
-                            "isCat": true,
-                            "name": "tabula"
-                        },
-                        {
-                            "@type": "dog",
-                            "isDog": true,
-                            "name": "rasa"
-                        }
-                    ]""");
-        }
+        then(json).isEqualTo("""
+                [
+                    {
+                        "@type": "cat",
+                        "isCat": true,
+                        "name": "tabula"
+                    },
+                    {
+                        "@type": "dog",
+                        "isDog": true,
+                        "name": "rasa"
+                    }
+                ]""");
     }
 
     @Bindable
@@ -343,13 +310,10 @@ abstract class JsonbIT extends AbstractJsonIT {
         private boolean hiddenPrivate;
     }
 
-    @Test void shouldSerializeFields() throws Exception {
-        try (var jsonb = jsonb(PLAIN)) {
+    @Test void shouldSerializeFields() {
+        var json = toJson(PRODUCT);
 
-            var json = jsonb.toJson(PRODUCT);
-
-            then(json).isEqualTo("{\"description\":\"foo\",\"id\":123}");
-        }
+        then(json).isEqualTo("{\"description\":\"foo\",\"id\":123}");
     }
 
     @Bindable
@@ -360,30 +324,23 @@ abstract class JsonbIT extends AbstractJsonIT {
         public String getFoo() {return "getter";}
     }
 
-    @Test void shouldSerializePropertyVariations() throws Exception {
-        try (var jsonb = jsonb(PLAIN)) {
+    @Test void shouldSerializePropertyVariations() {
+        var json = toJson(new PropertyVariations());
 
-            var json = jsonb.toJson(new PropertyVariations());
-
-            then(json).isEqualTo("{\"foo\":\"getter\"}");
-        }
+        then(json).isEqualTo("{\"foo\":\"getter\"}");
     }
 
-    @Test void shouldSerializeNullFormattedNumber() throws Exception {
-        try (var jsonb = jsonb(PLAIN)) {
+    @Test void shouldSerializeNullFormattedNumber() {
+        var json = toJson(person(1).withAddress(null).withPets(null).withIncome(null));
 
-            var json = jsonb.toJson(person(1).withAddress(null).withPets(null)
-                    .withIncome(null));
-
-            then(json).isEqualTo("{" +
-                                 "\"age\":13," +
-                                 "\"averageScore\":0.123," +
-                                 "\"firstName\":\"Jane-1\"," +
-                                 "\"lastName\":\"Doe-1\"," +
-                                 "\"member\":false," +
-                                 "\"registrationTimestamp\":10000000001," +
-                                 "\"roles\":[\"role-1\",\"role-...\",\"role-1\"]}");
-        }
+        then(json).isEqualTo("{" +
+                             "\"age\":13," +
+                             "\"averageScore\":0.123," +
+                             "\"firstName\":\"Jane-1\"," +
+                             "\"lastName\":\"Doe-1\"," +
+                             "\"member\":false," +
+                             "\"registrationTimestamp\":10000000001," +
+                             "\"roles\":[\"role-1\",\"role-...\",\"role-1\"]}");
     }
 
 
@@ -406,31 +363,42 @@ abstract class JsonbIT extends AbstractJsonIT {
         }
     }
 
-    @Test void shouldSerializeInvisibleElements() throws Exception {
-        try (var jsonb = jsonb(PLAIN)) {
+    @Test void shouldSerializeInvisibleElements() {
+        var json = toJson(new Invisibilities());
 
-            var json = jsonb.toJson(new Invisibilities());
-
-            then(json).isEqualTo("{\"visibleField\":\"F\",\"visibleGetter\":\"G\"}");
-        }
+        then(json).isEqualTo("{\"visibleField\":\"F\",\"visibleGetter\":\"G\"}");
     }
 
-    @Test void shouldSerializeOptionalList() throws Exception {
-        try (var jsonb = jsonb()) {
+    @Test void shouldSerializeOptionalListWithoutNullValues() {
+        var json = toJson(List.of(
+                        Optional.of("one"),
+                        Optional.empty(),
+                        Optional.of("three")),
+                FORMATTING);
 
-            var json = jsonb.toJson(List.of(
-                    Optional.of("one"),
-                    Optional.empty(),
-                    Optional.of("three")));
-
-            then(json).isEqualTo("""
-                    [
-                        "one",
-                        null,
-                        "three"
-                    ]""");
-        }
+        then(json).isEqualTo("""
+                [
+                    "one",
+                    null,
+                    "three"
+                ]""");
     }
+
+    @Test void shouldSerializeOptionalListWithNullValues() {
+        var json = toJson(List.of(
+                        Optional.of("one"),
+                        Optional.empty(),
+                        Optional.of("three")),
+                FORMATTING_AND_NULL_VALUES);
+
+        then(json).isEqualTo("""
+                [
+                    "one",
+                    null,
+                    "three"
+                ]""");
+    }
+
 
     @Override <T> T fromJson(String json, Type type) {
         try (var jsonb = jsonb(PLAIN)) {
@@ -438,5 +406,19 @@ abstract class JsonbIT extends AbstractJsonIT {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Test void shouldDeserializeOptionalListWithNullValues() {
+        var list = fromJson("""
+                [
+                    "one",
+                    null,
+                    "three"
+                ]""", genericType(new TypeLiteral<List<Optional<String>>>() {}));
+
+        then(list).isEqualTo(List.of(
+                Optional.of("one"),
+                Optional.empty(),
+                Optional.of("three")));
     }
 }

@@ -1,7 +1,7 @@
 package test;
 
+import com.github.t1.jsonbap.runtime.FluentParser;
 import com.github.t1.jsonbap.runtime.NullWriter;
-import com.github.t1.jsonbap.runtime.ParserHelper;
 import com.github.t1.jsonbap.test.Address;
 import com.github.t1.jsonbap.test.Cat;
 import com.github.t1.jsonbap.test.Dog;
@@ -176,7 +176,7 @@ public class JsonPIT extends AbstractJsonIT {
     }
 
     private Address parseAddress(JsonParser jsonParser) {
-        var parser = new ParserHelper(jsonParser);
+        var parser = new FluentParser(jsonParser);
         if (parser.is(VALUE_NULL)) return null;
         var builder = Address.builder();
         parser.assume(START_OBJECT);
@@ -195,7 +195,7 @@ public class JsonPIT extends AbstractJsonIT {
     }
 
     private Person parsePerson(JsonParser jsonParser) {
-        var parser = new ParserHelper(jsonParser);
+        var parser = new FluentParser(jsonParser);
         if (parser.is(VALUE_NULL)) return null;
         var builder = Person.builder();
         parser.assume(START_OBJECT);
@@ -219,7 +219,7 @@ public class JsonPIT extends AbstractJsonIT {
     }
 
     private List<Person> parseListOfPerson(JsonParser jsonParser) {
-        var parser = new ParserHelper(jsonParser);
+        var parser = new FluentParser(jsonParser);
         if (parser.is(VALUE_NULL)) return null;
         var list = new ArrayList<Person>();
         parser.assume(START_ARRAY);

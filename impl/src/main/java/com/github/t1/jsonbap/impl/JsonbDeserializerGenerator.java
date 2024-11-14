@@ -5,7 +5,7 @@ import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.Type;
 import com.github.t1.exap.reflection.ReflectionProcessingEnvironment;
 import com.github.t1.jsonbap.api.Bindable;
-import com.github.t1.jsonbap.runtime.ParserHelper;
+import com.github.t1.jsonbap.runtime.FluentParser;
 import jakarta.json.bind.serializer.DeserializationContext;
 import jakarta.json.bind.serializer.JsonbDeserializer;
 import jakarta.json.stream.JsonParser;
@@ -47,7 +47,7 @@ class JsonbDeserializerGenerator {
         typeGenerator.addImplements(new TypeExpressionGenerator(typeGenerator, type(JsonbDeserializer.class))
                 .withTypeArg(type));
 
-        typeGenerator.addImport(type(ParserHelper.class));
+        typeGenerator.addImport(type(FluentParser.class));
         typeGenerator.addImport(type(JsonParser.Event.class));
 
         var toJson = typeGenerator.addMethod(PUBLIC, "deserialize");
@@ -61,7 +61,7 @@ class JsonbDeserializerGenerator {
 
     private String body(TypeGenerator typeGenerator) {
         var body = new StringBuilder();
-        body.append("var parser = new ParserHelper(jsonParser);\n");
+        body.append("var parser = new FluentParser(jsonParser);\n");
         body.append("        if (parser.is(Event.VALUE_NULL)) return null;\n");
         body.append("        var object = ").append(initObjectExpression());
         body.append("        parser.assume(Event.START_OBJECT);\n");

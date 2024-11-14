@@ -2,7 +2,7 @@ package com.github.t1.jsonbap.impl;
 
 import com.github.t1.exap.insight.Method;
 import com.github.t1.exap.insight.Type;
-import com.github.t1.jsonbap.runtime.ParserHelper;
+import com.github.t1.jsonbap.runtime.FluentParser;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
@@ -53,7 +53,7 @@ class GetterProperty extends Property<Method> {
     @Override protected String propertyType() {return "getter";}
 
     @Override boolean isSettable() {
-        return elemental().getDeclaringType().hasMethod("set" + ParserHelper.titleCase(rawName()));
+        return elemental().getDeclaringType().hasMethod("set" + FluentParser.titleCase(rawName()));
     }
 
     @Override
@@ -67,5 +67,5 @@ class GetterProperty extends Property<Method> {
     @Override protected String readExpression() {return "object." + elemental.name() + "()";}
 
     @Override
-    protected String writeExpression(String value) {return "set" + ParserHelper.titleCase(rawName()) + "(" + value + ")";}
+    protected String writeExpression(String value) {return "set" + FluentParser.titleCase(rawName()) + "(" + value + ")";}
 }

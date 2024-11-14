@@ -23,8 +23,15 @@ public class JohnzonIT extends JsonbIT {
 
     @Override protected Jsonb jsonb(TestConfig testConfig) {return JSONB_MAP.get(testConfig);}
 
-    @Disabled("Johnzon doesn't support serializing Optional values")
-    @Test void shouldSerializeOptionalList() {}
+    @Disabled("Johnzon doesn't properly support serializing Optional values")
+    @Override @Test void shouldSerializeOptionalListWithNullValues() {}
+
+    @Disabled("Johnzon doesn't properly support serializing Optional values")
+    @Override @Test void shouldSerializeOptionalListWithoutNullValues() {}
+
+    @Disabled("Johnzon doesn't properly support deserializing Optional values")
+    @Test void shouldDeserializeOptionalListWithNullValues() {
+    }
 
     // Johnzon doesn't properly support deserializing BigDecimal values
     @Override String cheat(String json) {

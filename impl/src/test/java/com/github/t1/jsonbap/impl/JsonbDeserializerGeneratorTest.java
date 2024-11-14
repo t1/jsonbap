@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
 import static com.github.t1.jsonbap.impl.JsonbSerializerGeneratorTest.relativeName;
@@ -62,6 +63,51 @@ class JsonbDeserializerGeneratorTest {
     }
 
 
+    @Data
+    public static class OptionalDeserializable {
+        private Optional<String> optionalDeserializable;
+    }
+
+    @Test
+    void shouldGenerateDeserializerForOptionalString() {
+        generate(OptionalDeserializable.class);
+
+        then(generated(OptionalDeserializable.class)).isEqualTo("""
+                package com.github.t1.jsonbap.impl;
+                
+                import java.lang.reflect.Type;
+                
+                import javax.annotation.processing.Generated;
+                
+                import com.github.t1.jsonbap.runtime.FluentParser;
+                
+                import jakarta.json.bind.serializer.DeserializationContext;
+                import jakarta.json.bind.serializer.JsonbDeserializer;
+                import jakarta.json.stream.JsonParser;
+                import jakarta.json.stream.JsonParser.Event;
+                
+                @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
+                public class JsonbDeserializerGeneratorTest$OptionalDeserializable$$JsonbDeserializer implements JsonbDeserializer<JsonbDeserializerGeneratorTest$OptionalDeserializable> {
+                
+                    @Override
+                    public JsonbDeserializerGeneratorTest$OptionalDeserializable deserialize(JsonParser jsonParser, DeserializationContext ctx, Type rtType) {
+                        var parser = new FluentParser(jsonParser);
+                        if (parser.is(Event.VALUE_NULL)) return null;
+                        var object = new JsonbDeserializerGeneratorTest$OptionalDeserializable();
+                        parser.assume(Event.START_OBJECT);
+                        while (parser.next().is(Event.KEY_NAME)) {
+                            switch (parser.StringAndNext()) {
+                                case "optionalDeserializable" -> parser.readString().ifPresent(value -> object.setOptionalDeserializable(value));
+                            }
+                        }
+                        parser.assume(Event.END_OBJECT);
+                        return object;
+                    }
+                }
+                """);
+    }
+
+
     @Test
     void shouldGenerateAddressDeserializer() {
         generate(Address.class);
@@ -74,7 +120,7 @@ class JsonbDeserializerGeneratorTest {
                         
                         import javax.annotation.processing.Generated;
                         
-                        import com.github.t1.jsonbap.runtime.ParserHelper;
+                        import com.github.t1.jsonbap.runtime.FluentParser;
                         
                         import jakarta.json.bind.serializer.DeserializationContext;
                         import jakarta.json.bind.serializer.JsonbDeserializer;
@@ -86,7 +132,7 @@ class JsonbDeserializerGeneratorTest {
                         
                             @Override
                             public Address deserialize(JsonParser jsonParser, DeserializationContext ctx, Type rtType) {
-                                var parser = new ParserHelper(jsonParser);
+                                var parser = new FluentParser(jsonParser);
                                 if (parser.is(Event.VALUE_NULL)) return null;
                                 var object = new Address();
                                 parser.assume(Event.START_OBJECT);
@@ -119,7 +165,7 @@ class JsonbDeserializerGeneratorTest {
                         
                         import javax.annotation.processing.Generated;
                         
-                        import com.github.t1.jsonbap.runtime.ParserHelper;
+                        import com.github.t1.jsonbap.runtime.FluentParser;
                         
                         import jakarta.json.bind.serializer.DeserializationContext;
                         import jakarta.json.bind.serializer.JsonbDeserializer;
@@ -131,7 +177,7 @@ class JsonbDeserializerGeneratorTest {
                         
                             @Override
                             public Person deserialize(JsonParser jsonParser, DeserializationContext ctx, Type rtType) {
-                                var parser = new ParserHelper(jsonParser);
+                                var parser = new FluentParser(jsonParser);
                                 if (parser.is(Event.VALUE_NULL)) return null;
                                 var object = new Person();
                                 parser.assume(Event.START_OBJECT);

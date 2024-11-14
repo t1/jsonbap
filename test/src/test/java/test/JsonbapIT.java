@@ -190,6 +190,10 @@ public class JsonbapIT extends JsonbIT {
     @Test void shouldSerializeInvisibleElements() {
     }
 
+    @Disabled("_these_ null values have to be kept intact!")
+    @Override void shouldSerializeOptionalListWithoutNullValues() {
+    }
+
     @Disabled("not yet implemented")
     @Test void shouldDeserializeListOfPerson() {
     }

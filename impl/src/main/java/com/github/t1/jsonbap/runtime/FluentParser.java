@@ -3,19 +3,20 @@ package com.github.t1.jsonbap.runtime;
 import jakarta.json.bind.serializer.DeserializationContext;
 import jakarta.json.stream.JsonParser;
 
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.EnumSet;
 import java.util.Optional;
 
 import static java.util.Locale.ROOT;
 
-public final class ParserHelper {
+public final class FluentParser {
     public static String titleCase(String name) {
         return name.substring(0, 1).toUpperCase(ROOT) + name.substring(1);
     }
 
 
-    public ParserHelper(JsonParser parser) {
+    public FluentParser(JsonParser parser) {
         this.parser = parser;
         if (parser.currentEvent() == null) parser.next();
     }
@@ -25,7 +26,7 @@ public final class ParserHelper {
     public static Optional<String> readMethod(String simpleTypeName) {
         return switch (simpleTypeName) {
             case "String", "Boolean", "Integer", "Long", "Double", "BigDecimal" -> Optional.of("read" + simpleTypeName);
-            case "int" -> Optional.of("Integer");
+            case "int" -> Optional.of("readInteger");
             case "boolean", "long", "double" -> Optional.of("read" + titleCase(simpleTypeName));
             default -> Optional.empty();
         };
@@ -41,9 +42,9 @@ public final class ParserHelper {
                };
     }
 
-    public ParserHelper assume(JsonParser.Event... events) {return assume(EnumSet.of(events[0], events));}
+    public FluentParser assume(JsonParser.Event... events) {return assume(EnumSet.of(events[0], events));}
 
-    public ParserHelper assume(EnumSet<JsonParser.Event> events) {
+    public FluentParser assume(EnumSet<JsonParser.Event> events) {
         if (!is(events)) throw new IllegalStateException("expected " + events + " but was " + parser.currentEvent());
         return this;
     }
@@ -52,14 +53,14 @@ public final class ParserHelper {
 
     public boolean is(EnumSet<JsonParser.Event> events) {return events.contains(parser.currentEvent());}
 
-    public ParserHelper next() {
+    public FluentParser next() {
         parser.next();
         return this;
     }
 
     public void skipArray() {parser.skipArray();}
 
-    public <T> T deserialize(DeserializationContext ctx, Class<T> type) {return ctx.deserialize(type, parser);}
+    public <T> T deserialize(DeserializationContext ctx, Type type) {return ctx.deserialize(type, parser);}
 
 
     public String StringAndNext() {

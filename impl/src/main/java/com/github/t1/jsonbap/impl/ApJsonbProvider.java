@@ -1,5 +1,8 @@
 package com.github.t1.jsonbap.impl;
 
+import com.github.t1.jsonbap.impl.deserializers.List$$JsonbDeserializer;
+import com.github.t1.jsonbap.impl.deserializers.Optional$$JsonbDeserializer;
+import com.github.t1.jsonbap.impl.deserializers.String$$JsonbDeserializer;
 import com.github.t1.jsonbap.impl.serializers.Array$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.serializers.BigDecimal$$JsonbSerializer;
 import com.github.t1.jsonbap.impl.serializers.BigInteger$$JsonbSerializer;
@@ -38,6 +41,7 @@ import jakarta.json.bind.serializer.JsonbSerializer;
 import jakarta.json.bind.spi.JsonbProvider;
 import jakarta.json.spi.JsonProvider;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -67,6 +71,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ApJsonbProvider extends JsonbProvider {
     private static final Map<Type, JsonbSerializer<?>> SERIALIZERS = new ConcurrentHashMap<>();
+    private static final Map<Type, JsonbDeserializer<?>> DESERIALIZERS = new ConcurrentHashMap<>();
 
     static {
         try {
@@ -120,6 +125,8 @@ public class ApJsonbProvider extends JsonbProvider {
             SERIALIZERS.put(Float.class, new Float$$JsonbSerializer());
             SERIALIZERS.put(Double.class, new Double$$JsonbSerializer());
             SERIALIZERS.put(Boolean.class, new Boolean$$JsonbSerializer());
+
+            DESERIALIZERS.put(String.class, new String$$JsonbDeserializer());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("can't initialize jsonb serializers", e);
         }
@@ -129,14 +136,14 @@ public class ApJsonbProvider extends JsonbProvider {
         return serializerFor(typeOf(object));
     }
 
+    static Type typeOf(Object object) {
+        return (object == null) ? null : object.getClass();
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> JsonbSerializer<T> serializerFor(Type type) {
         return (JsonbSerializer<T>) ((type == null) ? Null$$JsonbSerializer.INSTANCE :
                 SERIALIZERS.computeIfAbsent(type, ApJsonbProvider::loadSerializerFor));
-    }
-
-    static Type typeOf(Object object) {
-        return (object == null) ? null : object.getClass();
     }
 
     private static JsonbSerializer<?> loadSerializerFor(Type type) {
@@ -170,6 +177,19 @@ public class ApJsonbProvider extends JsonbProvider {
 
     @SuppressWarnings("unchecked")
     public static <T> JsonbDeserializer<T> deserializerFor(Type type) {
+        return (JsonbDeserializer<T>) DESERIALIZERS.computeIfAbsent(type, ApJsonbProvider::loadDeserializerFor);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> JsonbDeserializer<T> loadDeserializerFor(Type type) {
+        if (type instanceof ParameterizedType p) {
+            if (p.getRawType().equals(Optional.class)) {
+                return (JsonbDeserializer<T>) new Optional$$JsonbDeserializer<>(p.getActualTypeArguments()[0]);
+            }
+            if (p.getRawType().equals(List.class)) {
+                return (JsonbDeserializer<T>) new List$$JsonbDeserializer<>(p.getActualTypeArguments()[0]);
+            }
+        }
         try {
             var deserializerClass = Class.forName(nonGenericTypeName(type) + "$$JsonbDeserializer");
             return (JsonbDeserializer<T>) deserializerClass.getConstructor().newInstance();
