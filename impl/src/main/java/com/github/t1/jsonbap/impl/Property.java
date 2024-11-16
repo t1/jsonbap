@@ -1,6 +1,5 @@
 package com.github.t1.jsonbap.impl;
 
-import com.github.t1.exap.generator.TypeGenerator;
 import com.github.t1.exap.insight.Elemental;
 import com.github.t1.exap.insight.ElementalKind;
 import com.github.t1.exap.insight.Type;
@@ -8,6 +7,7 @@ import com.github.t1.jsonbap.impl.Property.JsonbAnnotations.AnnotationWithSource
 import com.github.t1.jsonbap.runtime.DateTimeWriter;
 import com.github.t1.jsonbap.runtime.FluentParser;
 import com.github.t1.jsonbap.runtime.NullWriter;
+import com.github.t1.jsonbap.runtime.TypeLiteral;
 import jakarta.json.bind.annotation.JsonbDateFormat;
 import jakarta.json.bind.annotation.JsonbNillable;
 import jakarta.json.bind.annotation.JsonbNumberFormat;
@@ -16,7 +16,6 @@ import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.json.bind.annotation.JsonbVisibility;
 import jakarta.json.bind.serializer.SerializationContext;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 import java.lang.annotation.Annotation;
 import java.text.DecimalFormat;
@@ -30,7 +29,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
 import static com.github.t1.jsonbap.runtime.FluentParser.titleCase;
 import static java.util.stream.Collectors.joining;
 import static javax.lang.model.type.TypeKind.DECLARED;
@@ -190,11 +188,9 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
 
     protected abstract <V extends Property<?>> Either<V, String> or(V that);
 
-    final void writeSerializer(TypeGenerator typeGenerator, StringBuilder out) {new PropertySerializerWriter(typeGenerator, out).write();}
+    final void writeSerializer(BodyWriter body) {new PropertySerializerWriter(body).write();}
 
-    final void writeDeserializer(TypeGenerator typeGenerator, StringBuilder out, boolean useBuilder) {
-        new PropertyDeserializerWriter(typeGenerator, out, useBuilder).write();
-    }
+    final void writeDeserializer(BodyWriter body, boolean useBuilder) {new PropertyDeserializerWriter(body, useBuilder).write();}
 
 
     protected abstract Type type();
@@ -281,12 +277,10 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
         }
     }
 
-    @RequiredArgsConstructor
-    private class PropertySerializerWriter {
-        private final TypeGenerator typeGenerator;
-        private final StringBuilder out;
+    private class PropertySerializerWriter extends BodyWriter {
+        private PropertySerializerWriter(BodyWriter body) {super(body);}
 
-        public void write() {
+        private void write() {
             if (isTransient()) {
                 var transientMessage = Property.this + " is transient" + transientSourceMessage();
                 writeComment(transientMessage);
@@ -298,17 +292,6 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
                 writeField();
             }
             elementalErrors.forEach(this::writeError);
-        }
-
-        /// Even if we don't fail the build at compile time (due to the `throwJsonbExceptionsAtRuntime` config option),
-        /// we still create code that throws a `JsonbException` at runtime... as required by the spec.
-        private void writeError(String message) {
-            typeGenerator.addImport("jakarta.json.bind.JsonbException");
-            // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
-            out.append("        if (true) throw new JsonbException(\"")
-                    .append(message.replace("\"", "\\\""))
-                    .append("\");\n");
-
         }
 
         private String transientSourceMessage() {
@@ -342,21 +325,21 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             }
         }
 
-        private void writeComment(String message) {out.append("        // ").append(message).append("\n");}
+        private void writeComment(String message) {append("        // ").append(message).append("\n");}
 
         /**
          * Append the code required to serialize a primitive and non-nullable JSON key-value pair
          * directly to the {@link jakarta.json.stream.JsonGenerator generator}
          */
         private void writeDirect(String valueExpression) {
-            out.append("        out.write(\"");
-            out.append(name());
-            out.append("\", ").append(valueExpression).append(");\n");
+            append("        out.write(\"");
+            append(name());
+            append("\", ").append(valueExpression).append(");\n");
         }
 
         private void writeViaNullWriter(String valueExpression, String methodName) {
             typeGenerator.addImport(NullWriter.class.getName());
-            out.append("        NullWriter.").append(methodName).append("(\"").append(name()).append("\", ")
+            append("        NullWriter.").append(methodName).append("(\"").append(name()).append("\", ")
                     .append(valueExpression).append(", out, context);\n");
         }
 
@@ -430,43 +413,38 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
          * write a <code>null</code> value.
          */
         private void writeViaContext(String valueExpression) {
-            out.append("        context.serialize(\"");
-            out.append(name());
-            out.append("\", ").append(valueExpression).append(", out);\n");
+            append("        context.serialize(\"");
+            append(name());
+            append("\", ").append(valueExpression).append(", out);\n");
         }
     }
 
-    @RequiredArgsConstructor
-    private class PropertyDeserializerWriter {
-        private final TypeGenerator typeGenerator;
-        private final StringBuilder out;
+    private class PropertyDeserializerWriter extends BodyWriter {
         private final boolean useBuilder;
 
-        public void write() {
-            if (!isSettable()) {
-                writeComment(Property.this + " is not settable");
-            } else if (isTransient()) {
-                var transientMessage = Property.this + " is transient" + transientSourceMessage();
-                writeComment(transientMessage);
-                annotations().all().filter(annotation -> !annotation.is(JsonbTransient.class)).findAny()
-                        .ifPresent(a -> elementalError(transientMessage + " but also annotated " + a));
-            } else if (!isPublic()) {
-                writeComment(Property.this + " is not public");
-            } else {
-                writeField();
-            }
-            //elementalErrors.forEach(this::writeError);
+        private PropertyDeserializerWriter(BodyWriter body, boolean useBuilder) {
+            super(body);
+            this.useBuilder = useBuilder;
         }
 
-        /// Even if we don't fail the build at compile time (due to the `throwJsonbExceptionsAtRuntime` config option),
-        /// we still create code that throws a `JsonbException` at runtime... as required by the spec.
-        private void writeError(String message) {
-            typeGenerator.addImport("jakarta.json.bind.JsonbException");
-            // the `if (true)` makes the generated code valid, if more code is following, e.g., the `out.writeEnd()`
-            out.append("        if (true) throw new JsonbException(\"")
-                    .append(message.replace("\"", "\\\""))
-                    .append("\");\n");
-
+        private void write() {
+            try {
+                if (!isSettable()) {
+                    writeComment(Property.this + " is not settable");
+                } else if (isTransient()) {
+                    var transientMessage = Property.this + " is transient" + transientSourceMessage();
+                    writeComment(transientMessage);
+                    annotations().all().filter(annotation -> !annotation.is(JsonbTransient.class)).findAny()
+                            .ifPresent(a -> elementalError(transientMessage + " but also annotated " + a));
+                } else if (!isPublic()) {
+                    writeComment(Property.this + " is not public");
+                } else {
+                    writeField();
+                }
+                //elementalErrors.forEach(this::writeError);
+            } catch (Exception e) {
+                throw new RuntimeException("can't write code to serialize " + type() + " " + Property.this, e);
+            }
         }
 
         private String transientSourceMessage() {
@@ -483,50 +461,78 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             jsonbVisibility().ifPresent(jsonbVisibility -> writeComment("visibility from " + jsonbVisibility));
             // TODO call the visibility strategy to find out, if we should read this property at all
 
-            out.append("                case \"")
+            append("                case \"")
                     .append(name())
                     .append("\" -> ");
             var typeToDeserialize = typeToDeserialize();
+            typeToImport(typeToDeserialize).ifPresent(typeGenerator::addImport);
             var readMethod = FluentParser.readMethod(typeToDeserialize.getSimpleName());
-            if (readMethod.isPresent()) {
-                out.append("parser.").append(readMethod.get()).append("().ifPresent(");
-                if (useBuilder) {
-                    out.append("object::").append(rawName());
+            if (type().isArray()) {
+                var elementType = type().elementType();
+                String nestedExpression;
+                if (elementType.isA(Optional.class)) {
+                    typeGenerator.addImport(Optional.class.getName(), TypeLiteral.class.getName());
+                    elementType = elementType.getTypeParameters().getFirst();
+                    nestedExpression = "TypeLiteral.genericType(new TypeLiteral<Optional<" + elementType.getRelativeName() + ">[]>() {})";
+                } else if (elementType.isA(List.class)) {
+                    typeGenerator.addImport(TypeLiteral.class.getName());
+                    elementType = elementType.getTypeParameters().getFirst();
+                    nestedExpression = "TypeLiteral.genericType(new TypeLiteral<List<" + elementType.getRelativeName() + ">[]>() {})";
                 } else {
-                    out.append("value -> object.").append(writeExpression("value"));
+                    nestedExpression = elementType.getRelativeName() + "[].class";
                 }
-                out.append(")");
-            } else {
-                typeToImport(typeToDeserialize).ifPresent(typeGenerator::addImport);
-                var nestedExpression = "ctx.deserialize(" + typeToDeserialize.getSimpleName() + ".class, jsonParser)";
-                if (useBuilder) {
-                    out.append("object.").append(rawName()).append("(").append(nestedExpression).append(")");
+                assign("ctx.deserialize(" + nestedExpression + ", jsonParser)");
+            } else if (readMethod.isEmpty()) {
+                String nestedExpression;
+                if (type().isA(Optional.class)) {
+                    typeGenerator.addImport(Optional.class.getName());
+                    nestedExpression = "Optional.ofNullable(" +
+                                       "ctx.deserialize(" + type().getTypeParameters().getFirst().getRelativeName() +
+                                       ".class" + ", jsonParser))";
                 } else {
-                    out.append("object.").append(writeExpression(nestedExpression));
+                    nestedExpression = "ctx.deserialize(" + type().getRelativeName()
+                                       + ".class" + ", jsonParser)";
+                }
+                assign(nestedExpression);
+            } else {
+                if (type().isA(Optional.class)) {
+                    assign("parser." + readMethod.get() + "()");
+                } else {
+                    append("parser.").append(readMethod.get()).append("().ifPresent(");
+                    if (useBuilder) {
+                        append("object::").append(rawName());
+                    } else {
+                        append("value -> object.").append(writeExpression("value"));
+                    }
+                    append(")");
                 }
             }
-            out.append(";\n");
+            append(";\n");
         }
 
-        private Optional<Type> typeToImport(Type typeToDeserialize) {
-            if (typeToDeserialize.isArray()) typeToDeserialize = typeToDeserialize.elementType();
-            return typeToDeserialize.isPrimitive() || typeToDeserialize.getKind() != DECLARED
-                   || typeToDeserialize.getPackage().name().startsWith("java.lang.")
-                    ? Optional.empty() : Optional.of(typeToDeserialize);
-        }
+        private void writeComment(String message) {append("        // ").append(message).append("\n");}
 
         private Type typeToDeserialize() {
             var type = type();
-            if ("java.util.Optional<java.lang.String>[]".equals(type.getFullName())) {
-                return ENV.type(String.class);
+            if (type.isArray()) type = type.elementType();
+            try {
+                return type.isA(Optional.class) ? type.getTypeParameters().getFirst() : type;
+            } catch (Exception e) {
+                throw new RuntimeException("can't get type parameter of " + type.getKind() + " " + type, e);
             }
-            // if (type.isA(Optional.class)) { // TODO fails with NPE?!?
-            if (type.getFullName().startsWith("java.util.Optional<") && type.getFullName().endsWith(">")) {
-                type = type.getTypeParameters().getFirst();
-            }
-            return type;
         }
 
-        private void writeComment(String message) {out.append("        // ").append(message).append("\n");}
+        private Optional<Type> typeToImport(Type type) {
+            if (type.isArray()) type = type.elementType();
+            return type.getKind() == DECLARED ? Optional.of(type) : Optional.empty();
+        }
+
+        private void assign(String nestedExpression) {
+            if (useBuilder) {
+                append("object.").append(rawName()).append("(").append(nestedExpression).append(")");
+            } else {
+                append("object.").append(writeExpression(nestedExpression));
+            }
+        }
     }
 }

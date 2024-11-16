@@ -4,6 +4,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 /// Is there a simpler way to do type literals for JSON-B?
+///
+/// E.g. `genericType(new TypeLiteral<List<Optional<String>>>(){})`
 @SuppressWarnings("unused")
 public class TypeLiteral<T> {
     public static Type genericType(TypeLiteral<?> typeLiteral) {

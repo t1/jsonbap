@@ -55,9 +55,9 @@ class JsonbSerializerGenerator {
     }
 
     private String body(TypeGenerator typeGenerator) {
-        var body = new StringBuilder();
+        var body = new BodyWriter(jsonbapConfig, typeGenerator, new StringBuilder());
         body.append("out.writeStartObject();\n");
-        properties().forEach(property -> property.writeSerializer(typeGenerator, body));
+        properties().forEach(property -> property.writeSerializer(body));
         body.append("        out.writeEnd();");
         return body.toString();
     }

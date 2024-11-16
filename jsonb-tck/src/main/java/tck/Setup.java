@@ -121,7 +121,6 @@ import com.github.t1.jsonbap.api.Bindable;
         ee.jakarta.tck.json.bind.defaultmapping.specifictypes.model.URIContainer.class,
         ee.jakarta.tck.json.bind.defaultmapping.specifictypes.model.URLContainer.class,
         ee.jakarta.tck.json.bind.defaultmapping.uniqueness.model.SimpleContainer.class,
-        ee.jakarta.tck.json.bind.TypeContainer.class,
 })
 public class Setup {
     public static void main(String[] args) {

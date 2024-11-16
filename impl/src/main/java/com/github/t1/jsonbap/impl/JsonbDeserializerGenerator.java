@@ -2,6 +2,7 @@ package com.github.t1.jsonbap.impl;
 
 import com.github.t1.exap.generator.TypeExpressionGenerator;
 import com.github.t1.exap.generator.TypeGenerator;
+import com.github.t1.exap.insight.Method;
 import com.github.t1.exap.insight.Type;
 import com.github.t1.exap.reflection.ReflectionProcessingEnvironment;
 import com.github.t1.jsonbap.api.Bindable;
@@ -60,14 +61,19 @@ class JsonbDeserializerGenerator {
     }
 
     private String body(TypeGenerator typeGenerator) {
-        var body = new StringBuilder();
+        var body = new BodyWriter(jsonbapConfig, typeGenerator, new StringBuilder());
         body.append("var parser = new FluentParser(jsonParser);\n");
         body.append("        if (parser.is(Event.VALUE_NULL)) return null;\n");
-        body.append("        var object = ").append(initObjectExpression());
+        if (hasPublicNoArgsConstructor()) {
+            body.append("        var object = ").append(initObjectExpression());
+        } else {
+            body.error(type, "doesn't have a public no-args constructor");
+            body.append("        " + type.getRelativeName() + " object = null;\n");
+        }
         body.append("        parser.assume(Event.START_OBJECT);\n");
         body.append("        while (parser.next().is(Event.KEY_NAME)) {\n");
         body.append("            switch (parser.StringAndNext()) {\n");
-        properties().forEach(property -> property.writeDeserializer(typeGenerator, body, useBuilder()));
+        properties().forEach(property -> property.writeDeserializer(body, useBuilder()));
         body.append("            }\n");
         body.append("        }\n");
         body.append("        parser.assume(Event.END_OBJECT);\n");
@@ -82,6 +88,14 @@ class JsonbDeserializerGenerator {
     }
 
     private boolean useBuilder() {return type.annotations().get("lombok.Builder").isPresent();}
+
+    private boolean hasPublicNoArgsConstructor() {
+        return type.getConstructors().stream().anyMatch(this::isPublicNoArgs);
+    }
+
+    private boolean isPublicNoArgs(Method method) {
+        return method.isPublic() && method.getParameters().isEmpty();
+    }
 
     private List<Property<?>> properties() {
         return Stream.concat(

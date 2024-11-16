@@ -25,9 +25,10 @@ public final class FluentParser {
 
     public static Optional<String> readMethod(String simpleTypeName) {
         return switch (simpleTypeName) {
-            case "String", "Boolean", "Integer", "Long", "Double", "BigDecimal" -> Optional.of("read" + simpleTypeName);
+            case "String", "Boolean", "Byte", "Integer", "Long", "Float", "Double", "BigDecimal" ->
+                    Optional.of("read" + simpleTypeName);
             case "int" -> Optional.of("readInteger");
-            case "boolean", "long", "double" -> Optional.of("read" + titleCase(simpleTypeName));
+            case "boolean", "byte", "long", "float", "double" -> Optional.of("read" + titleCase(simpleTypeName));
             default -> Optional.empty();
         };
     }
@@ -86,6 +87,14 @@ public final class FluentParser {
         };
     }
 
+    public Optional<Byte> readByte() {
+        return switch (parser.currentEvent()) {
+            case VALUE_NULL -> Optional.empty();
+            case VALUE_NUMBER -> Optional.of((byte) parser.getInt());
+            default -> throw new IllegalStateException("unexpected " + parser.currentEvent());
+        };
+    }
+
     public Optional<Integer> readInteger() {
         return switch (parser.currentEvent()) {
             case VALUE_NULL -> Optional.empty();
@@ -98,6 +107,14 @@ public final class FluentParser {
         return switch (parser.currentEvent()) {
             case VALUE_NULL -> Optional.empty();
             case VALUE_NUMBER -> Optional.of(parser.getLong());
+            default -> throw new IllegalStateException("unexpected " + parser.currentEvent());
+        };
+    }
+
+    public Optional<Float> readFloat() {
+        return switch (parser.currentEvent()) {
+            case VALUE_NULL -> Optional.empty();
+            case VALUE_NUMBER -> Optional.of(parser.getBigDecimal().floatValue());
             default -> throw new IllegalStateException("unexpected " + parser.currentEvent());
         };
     }
