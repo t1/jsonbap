@@ -19,8 +19,8 @@ public class List$$JsonbDeserializer<T> implements JsonbDeserializer<List<T>> {
     @Override public List<T> deserialize(JsonParser jsonParser, DeserializationContext ctx, Type rtType) {
         var list = new ArrayList<T>();
         var parser = new FluentParser(jsonParser);
-        parser.assume(Event.START_ARRAY).next();
-        while (!parser.is(Event.END_ARRAY)) {
+        parser.assume(Event.START_ARRAY);
+        while (parser.hasNext() && !parser.next().is(Event.END_ARRAY)) {
             list.add(parser.deserialize(ctx, subtype));
         }
         return list;

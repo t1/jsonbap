@@ -7,6 +7,8 @@ import com.github.t1.exap.insight.SourceAlreadyExistsException;
 import com.github.t1.exap.insight.Type;
 import com.github.t1.jsonbap.api.Bindable;
 
+import java.util.function.Function;
+
 @SupportedAnnotationClasses({Bindable.class})
 public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
     private JsonbapConfig config;
@@ -19,16 +21,16 @@ public class JsonbAnnotationProcessor extends ExtendedAbstractProcessor {
     }
 
     private void process(Type type) {
-        var bindable = type.annotationWrapper(Bindable.class);
-        if (bindable.isEmpty() || bindable.get().getBooleanProperty("serializable")) {
-            generateSerializerFor(type);
-        }
-        if (bindable.isEmpty() || bindable.get().getBooleanProperty("deserializable")) {
-            generateDeserializerFor(type);
-        }
+        if (is(type, Bindable::serializable)) generateSerializerFor(type);
+        if (is(type, Bindable::deserializable)) generateDeserializerFor(type);
 
-        bindable.ifPresent(bindable_ -> bindable_.getTypeProperties("value")
-                .forEach(this::process));
+        type.annotationWrapper(Bindable.class)
+                .ifPresent(bindable -> bindable.getTypeProperties("value")
+                        .forEach(this::process));
+    }
+
+    private static boolean is(Type type, Function<Bindable, Boolean> serializable) {
+        return type.annotation(Bindable.class).map(serializable).orElse(false);
     }
 
     private void generateSerializerFor(Type type) {

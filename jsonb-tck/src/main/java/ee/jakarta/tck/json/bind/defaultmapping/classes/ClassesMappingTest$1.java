@@ -4,8 +4,7 @@ import com.github.t1.jsonbap.api.Bindable;
 
 @Bindable(deserializable = false)
 public class ClassesMappingTest$1 {
-    public ClassesMappingTest$1(ClassesMappingTest ignoreUnused) {
-    }
+    public ClassesMappingTest$1(ClassesMappingTest ignoreUnused) {}
 
     @SuppressWarnings("unused")
     public String newInstance = "Anonymous";

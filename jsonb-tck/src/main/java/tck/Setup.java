@@ -2,7 +2,7 @@ package tck;
 
 import com.github.t1.jsonbap.api.Bindable;
 
-@Bindable(serializable = false, value = {
+@Bindable(value = {
         ee.jakarta.tck.json.bind.api.model.SimpleAnnotatedDateContainer.class,
         ee.jakarta.tck.json.bind.api.model.SimpleAnnotatedDoubleContainer.class,
         ee.jakarta.tck.json.bind.api.model.SimpleAnnotatedNillableContainer.class,

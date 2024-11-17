@@ -187,16 +187,13 @@ public class JsonbapIT extends JsonbIT {
     }
 
     @Disabled("not yet implemented")
-    @Test void shouldSerializeInvisibleElements() {
-    }
+    @Test void shouldSerializeInvisibleElements() {}
 
     @Disabled("_these_ null values have to be kept intact!")
-    @Override void shouldSerializeOptionalListWithoutNullValues() {
-    }
+    @Override void shouldSerializeOptionalListWithoutNullValues() {}
 
-    @Disabled("not yet implemented")
-    @Test void shouldDeserializeListOfPerson() {
-    }
+    @Disabled("_these_ null values have to be kept intact!")
+    @Test void shouldDeserializeOptionalListWithNullValues() {}
 
     @Override String cheat(String json) {
         return super.cheat(json)

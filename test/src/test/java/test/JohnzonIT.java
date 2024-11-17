@@ -30,8 +30,7 @@ public class JohnzonIT extends JsonbIT {
     @Override @Test void shouldSerializeOptionalListWithoutNullValues() {}
 
     @Disabled("Johnzon doesn't properly support deserializing Optional values")
-    @Test void shouldDeserializeOptionalListWithNullValues() {
-    }
+    @Test void shouldDeserializeOptionalListWithNullValues() {}
 
     // Johnzon doesn't properly support deserializing BigDecimal values
     @Override String cheat(String json) {

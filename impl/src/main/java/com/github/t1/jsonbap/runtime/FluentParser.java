@@ -54,12 +54,16 @@ public final class FluentParser {
 
     public boolean is(EnumSet<JsonParser.Event> events) {return events.contains(parser.currentEvent());}
 
+    public boolean hasNext() {return parser.hasNext();}
+
     public FluentParser next() {
         parser.next();
         return this;
     }
 
     public void skipArray() {parser.skipArray();}
+
+    public <T> T deserialize(DeserializationContext ctx, Class<T> type) {return ctx.deserialize(type, parser);}
 
     public <T> T deserialize(DeserializationContext ctx, Type type) {return ctx.deserialize(type, parser);}
 

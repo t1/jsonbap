@@ -15,13 +15,14 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Queue;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
 import static com.github.t1.jsonbap.impl.JsonbSerializerGeneratorTest.relativeName;
@@ -158,7 +159,54 @@ class JsonbDeserializerGeneratorTest {
                         parser.assume(Event.START_OBJECT);
                         while (parser.next().is(Event.KEY_NAME)) {
                             switch (parser.StringAndNext()) {
-                                case "element" -> object.setElement(Optional.ofNullable(ctx.deserialize(JsonbDeserializerGeneratorTest$StringContainer.class, jsonParser)));
+                                case "element" -> object.setElement(Optional.ofNullable(parser.deserialize(ctx, JsonbDeserializerGeneratorTest$StringContainer.class)));
+                            }
+                        }
+                        parser.assume(Event.END_OBJECT);
+                        return object;
+                    }
+                }
+                """);
+    }
+
+
+    @Getter @Setter
+    public static class MultipleBoundsContainer<T extends Serializable & Queue<?>> implements Container<List<T>> {
+        protected List<T> element;
+    }
+
+    @Test
+    void shouldGenerateDeserializerForMultipleBoundsContainer() {
+        generate(MultipleBoundsContainer.class);
+
+        then(generated(MultipleBoundsContainer.class)).isEqualTo("""
+                package com.github.t1.jsonbap.impl;
+                
+                import java.lang.reflect.Type;
+                import java.util.List;
+                
+                import javax.annotation.processing.Generated;
+                
+                import com.github.t1.jsonbap.runtime.FluentParser;
+                import com.github.t1.jsonbap.runtime.TypeLiteral;
+                
+                import jakarta.json.bind.serializer.DeserializationContext;
+                import jakarta.json.bind.serializer.JsonbDeserializer;
+                import jakarta.json.stream.JsonParser;
+                import jakarta.json.stream.JsonParser.Event;
+                
+                @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
+                public class JsonbDeserializerGeneratorTest$MultipleBoundsContainer$$JsonbDeserializer implements JsonbDeserializer<JsonbDeserializerGeneratorTest$MultipleBoundsContainer> {
+                
+                    @Override
+                    public JsonbDeserializerGeneratorTest$MultipleBoundsContainer deserialize(JsonParser jsonParser, DeserializationContext ctx, Type rtType) {
+                        var parser = new FluentParser(jsonParser);
+                        if (parser.is(Event.VALUE_NULL)) return null;
+                        var object = new JsonbDeserializerGeneratorTest$MultipleBoundsContainer();
+                        parser.assume(Event.START_OBJECT);
+                        while (parser.next().is(Event.KEY_NAME)) {
+                            switch (parser.StringAndNext()) {
+                                case "element" -> object.setElement(parser.deserialize(ctx, TypeLiteral.genericType(new TypeLiteral<List<Serializable>[]>() {})));
                             }
                         }
                         parser.assume(Event.END_OBJECT);
@@ -214,7 +262,6 @@ class JsonbDeserializerGeneratorTest {
     }
 
     @Test
-    @Disabled("collections are not yet supported, yet")
     void shouldGeneratePersonDeserializer() {
         generate(Person.class);
 
@@ -223,10 +270,12 @@ class JsonbDeserializerGeneratorTest {
                         package com.github.t1.jsonbap.impl;
                         
                         import java.lang.reflect.Type;
+                        import java.util.List;
                         
                         import javax.annotation.processing.Generated;
                         
                         import com.github.t1.jsonbap.runtime.FluentParser;
+                        import com.github.t1.jsonbap.runtime.TypeLiteral;
                         
                         import jakarta.json.bind.serializer.DeserializationContext;
                         import jakarta.json.bind.serializer.JsonbDeserializer;
@@ -244,11 +293,11 @@ class JsonbDeserializerGeneratorTest {
                                 parser.assume(Event.START_OBJECT);
                                 while (parser.next().is(Event.KEY_NAME)) {
                                     switch (parser.StringAndNext()) {
-                                        case "address" -> object.setAddress(ctx.deserialize(Address.class, jsonParser));
+                                        case "address" -> object.setAddress(parser.deserialize(ctx, Address.class));
                                         case "age" -> parser.readInteger().ifPresent(value -> object.setAge(value));
                                         case "firstName" -> parser.readString().ifPresent(value -> object.setFirstName(value));
                                         case "lastName" -> parser.readString().ifPresent(value -> object.setLastName(value));
-                                        case "roles" -> object.setRoles(Stream.of(ctx.deserialize(String[].class, jsonParser)).toList());
+                                        case "roles" -> object.setRoles(parser.deserialize(ctx, TypeLiteral.genericType(new TypeLiteral<List<String>[]>() {})));
                                     }
                                 }
                                 parser.assume(Event.END_OBJECT);
@@ -294,7 +343,7 @@ class JsonbDeserializerGeneratorTest {
                                 parser.assume(Event.START_OBJECT);
                                 while (parser.next().is(Event.KEY_NAME)) {
                                     switch (parser.StringAndNext()) {
-                                        case "data" -> object.setData(ctx.deserialize(byte[].class, jsonParser));
+                                        case "data" -> object.setData(parser.deserialize(ctx, byte[].class));
                                     }
                                 }
                                 parser.assume(Event.END_OBJECT);
@@ -341,7 +390,7 @@ class JsonbDeserializerGeneratorTest {
                                 parser.assume(Event.START_OBJECT);
                                 while (parser.next().is(Event.KEY_NAME)) {
                                     switch (parser.StringAndNext()) {
-                                        case "element" -> object.setElement(ctx.deserialize(TypeLiteral.genericType(new TypeLiteral<Optional<String>[]>() {}), jsonParser));
+                                        case "element" -> object.setElement(parser.deserialize(ctx, TypeLiteral.genericType(new TypeLiteral<Optional<String>[]>() {})));
                                     }
                                 }
                                 parser.assume(Event.END_OBJECT);
@@ -389,7 +438,7 @@ class JsonbDeserializerGeneratorTest {
                                 parser.assume(Event.START_OBJECT);
                                 while (parser.next().is(Event.KEY_NAME)) {
                                     switch (parser.StringAndNext()) {
-                                        case "element" -> object.setElement(ctx.deserialize(TypeLiteral.genericType(new TypeLiteral<List<String>[]>() {}), jsonParser));
+                                        case "element" -> object.setElement(parser.deserialize(ctx, TypeLiteral.genericType(new TypeLiteral<List<String>[]>() {})));
                                     }
                                 }
                                 parser.assume(Event.END_OBJECT);
@@ -495,7 +544,7 @@ class JsonbDeserializerGeneratorTest {
                         parser.assume(Event.START_OBJECT);
                         while (parser.next().is(Event.KEY_NAME)) {
                             switch (parser.StringAndNext()) {
-                                case "nestedClass" -> object.nestedClass = ctx.deserialize(JsonbDeserializerGeneratorTest$StringContainerPublicStaticNestedClass$NestedClass.class, jsonParser);
+                                case "nestedClass" -> object.nestedClass = parser.deserialize(ctx, JsonbDeserializerGeneratorTest$StringContainerPublicStaticNestedClass$NestedClass.class);
                             }
                         }
                         parser.assume(Event.END_OBJECT);
@@ -581,7 +630,7 @@ class JsonbDeserializerGeneratorTest {
                         parser.assume(Event.START_OBJECT);
                         while (parser.next().is(Event.KEY_NAME)) {
                             switch (parser.StringAndNext()) {
-                                case "element" -> object.setElement(ctx.deserialize(JsonbDeserializerGeneratorTest$StringContainer[].class, jsonParser));
+                                case "element" -> object.setElement(parser.deserialize(ctx, JsonbDeserializerGeneratorTest$StringContainer[].class));
                             }
                         }
                         parser.assume(Event.END_OBJECT);

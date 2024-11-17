@@ -5,8 +5,7 @@ import com.github.t1.jsonbap.api.Bindable;
 @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "unused"})
 @Bindable(deserializable = false)
 public class UntypedMappingTest$1 {
-    public UntypedMappingTest$1(UntypedMappingTest ignoreUnused) {
-    }
+    public UntypedMappingTest$1(UntypedMappingTest ignoreUnused) {}
 
     private String stringProperty = "Test String";
 

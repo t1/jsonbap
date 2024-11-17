@@ -470,28 +470,28 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             if (type().isArray()) {
                 var elementType = type().elementType();
                 String nestedExpression;
-                if (elementType.isA(Optional.class)) {
-                    typeGenerator.addImport(Optional.class.getName(), TypeLiteral.class.getName());
-                    elementType = elementType.getTypeParameters().getFirst();
-                    nestedExpression = "TypeLiteral.genericType(new TypeLiteral<Optional<" + elementType.getRelativeName() + ">[]>() {})";
-                } else if (elementType.isA(List.class)) {
+                if (elementType.isParameterized()) {
+                    typeGenerator.addImport(elementType);
                     typeGenerator.addImport(TypeLiteral.class.getName());
-                    elementType = elementType.getTypeParameters().getFirst();
-                    nestedExpression = "TypeLiteral.genericType(new TypeLiteral<List<" + elementType.getRelativeName() + ">[]>() {})";
+                    nestedExpression = "TypeLiteral.genericType(new TypeLiteral<" + elementType.getRelativeName()
+                                       + elementType.getTypeParameters().stream().map(Type::getRelativeName)
+                                               .collect(joining(",", "<", ">")) + "[]>() {})";
                 } else {
                     nestedExpression = elementType.getRelativeName() + "[].class";
                 }
-                assign("ctx.deserialize(" + nestedExpression + ", jsonParser)");
+                assign("parser.deserialize(ctx, " + nestedExpression + ")");
             } else if (readMethod.isEmpty()) {
                 String nestedExpression;
                 if (type().isA(Optional.class)) {
                     typeGenerator.addImport(Optional.class.getName());
                     nestedExpression = "Optional.ofNullable(" +
-                                       "ctx.deserialize(" + type().getTypeParameters().getFirst().getRelativeName() +
-                                       ".class" + ", jsonParser))";
+                                       "parser.deserialize(ctx, " + type().getTypeParameters().getFirst().getRelativeName() +
+                                       ".class))";
+                } else if (type().isParameterized()) {
+                    typeGenerator.addImport(TypeLiteral.class.getName());
+                    nestedExpression = "parser.deserialize(ctx, TypeLiteral.genericType(new TypeLiteral<" + typeExpression() + "[]>() {}))";
                 } else {
-                    nestedExpression = "ctx.deserialize(" + type().getRelativeName()
-                                       + ".class" + ", jsonParser)";
+                    nestedExpression = "parser.deserialize(ctx, " + type().getRelativeName() + ".class" + ")";
                 }
                 assign(nestedExpression);
             } else {
@@ -510,6 +510,25 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             append(";\n");
         }
 
+        private String typeExpression() {
+            var out = new StringBuilder();
+            typeGenerator.addImport(type());
+            out.append(type().getRelativeName());
+            boolean first = true;
+            for (var param : type().getTypeParameters()) {
+                if (first) {
+                    first = false;
+                    out.append("<");
+                } else {
+                    out.append(", ");
+                }
+                typeGenerator.addImport(param);
+                out.append(param.getRelativeName());
+            }
+            out.append(">");
+            return out.toString();
+        }
+
         private void writeComment(String message) {append("        // ").append(message).append("\n");}
 
         private Type typeToDeserialize() {
@@ -518,13 +537,13 @@ abstract class Property<T extends Elemental> implements Comparable<Property<?>> 
             try {
                 return type.isA(Optional.class) ? type.getTypeParameters().getFirst() : type;
             } catch (Exception e) {
-                throw new RuntimeException("can't get type parameter of " + type.getKind() + " " + type, e);
+                throw new RuntimeException("can't get type parameter of " + type.typeKind() + " " + type, e);
             }
         }
 
         private Optional<Type> typeToImport(Type type) {
             if (type.isArray()) type = type.elementType();
-            return type.getKind() == DECLARED ? Optional.of(type) : Optional.empty();
+            return type.typeKind() == DECLARED ? Optional.of(type) : Optional.empty();
         }
 
         private void assign(String nestedExpression) {

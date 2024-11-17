@@ -26,9 +26,9 @@ public class Person$$JsonbDeserializer implements JsonbDeserializer<Person> {
                 case "address" -> builder.address(parser.deserialize(ctx, Address.class));
                 case "formerAddress" -> builder.formerAddress(parser.deserialize(ctx, Address.class));
                 case "member" -> parser.readBoolean().ifPresent(builder::member);
-                case "roles" -> builder.roles(Stream.of(ctx.deserialize(String[].class, jsonParser)).toList());
+                case "roles" -> builder.roles(Stream.of(parser.deserialize(ctx, String[].class)).toList());
                 case "registrationTimestamp" -> parser.readLong().ifPresent(builder::registrationTimestamp);
-                case "pets" -> Stream.of(ctx.deserialize(Pet[].class, jsonParser)).forEach(builder::pet);
+                case "pets" -> Stream.of(parser.deserialize(ctx, Pet[].class)).forEach(builder::pet);
                 case "income" -> parser.readBigDecimal().ifPresent(builder::income);
             }
         }

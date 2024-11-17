@@ -112,6 +112,5 @@ public class JsonbapJsonb implements Jsonb {
         ApJsonbProvider.serializerFor(type).serialize(object, out, context);
     }
 
-    @Override public void close() {
-    }
+    @Override public void close() {}
 }
