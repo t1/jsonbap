@@ -58,7 +58,7 @@
         <dependency>
             <groupId>org.jboss.arquillian.junit5</groupId>
             <artifactId>arquillian-junit5-container</artifactId>
-            <version>1.9.1.Final</version>
+            <version>1.9.3.Final</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.parsson</groupId>
