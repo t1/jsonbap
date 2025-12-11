@@ -24,7 +24,7 @@
         <maven-test-plugin.version>3.5.4</maven-test-plugin.version>
 
         <jmh.version>1.37</jmh.version>
-        <logback.version>1.5.21</logback.version>
+        <logback.version>1.5.22</logback.version>
     </properties>
 
     <build>
