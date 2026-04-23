@@ -15,7 +15,7 @@ import java.util.ArrayDeque;
 import java.util.List;
 
 import static com.github.t1.exap.reflection.ReflectionProcessingEnvironment.ENV;
-import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.LOWER_CASE_WITH_DASHES;
+import static com.github.t1.jsonbap.api.PropertyNamingStrategyEnum.LOWER_CASE_WITH_DASHES;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.StandardLocation.SOURCE_OUTPUT;
 import static org.assertj.core.api.BDDAssertions.then;
@@ -327,8 +327,58 @@ class JsonbSerializerGeneratorTest {
                                        " in " + DuplicateNameContainer.class);
     }
 
-    private static void generate(Class<?> serializableClass) {
-        var messages = generator(serializableClass);
-        then(messages).isEmpty();
+    public static class ArrayDequeContainer implements TypeContainer<ArrayDeque<String>> {
+        private ArrayDeque<String> instance;
+
+        @Override
+        public ArrayDeque<String> getInstance() {
+            return instance;
+        }
+
+        @Override
+        public void setInstance(ArrayDeque<String> instance) {
+            this.instance = instance;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public interface TypeContainer<T> {
+        T getInstance();
+
+        void setInstance(T instance);
+    }
+
+    @Test
+    @Disabled
+    public void retestTckSerializer() {
+        var instance = new ArrayDeque<String>();
+        instance.add("Test 1");
+        instance.add("Test 2");
+        generate(new ArrayDequeContainer() {{
+            setInstance(instance);
+        }}.getClass());
+
+        then(ENV.getCreatedResource(SOURCE_OUTPUT, ArrayDequeContainer.class.getPackage().getName(),
+                "JsonbSerializerGeneratorTest$1$$JsonbSerializer")).isEqualTo(
+                """
+                        package com.github.t1.jsonbap.impl;
+                        
+                        import javax.annotation.processing.Generated;
+                        
+                        import jakarta.json.bind.serializer.JsonbSerializer;
+                        import jakarta.json.bind.serializer.SerializationContext;
+                        import jakarta.json.stream.JsonGenerator;
+                        
+                        @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
+                        public class JsonbSerializerGeneratorTest$1$$JsonbSerializer implements JsonbSerializer<JsonbSerializerGeneratorTest$1> {
+                        
+                            @Override
+                            public void serialize(JsonbSerializerGeneratorTest$1 object, JsonGenerator out, SerializationContext context) {
+                                out.writeStartObject();
+                                context.serialize("instance", object.getInstance(), out);
+                                out.writeEnd();
+                            }
+                        }
+                        """);
     }
 }

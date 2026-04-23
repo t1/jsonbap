@@ -566,6 +566,51 @@ class JsonbDeserializerGeneratorTest {
         private String element = "Test";
     }
 
+    @Setter @Getter
+    public static class StringContainers implements Container<StringContainer> {
+        private StringContainer element = new StringContainer();
+    }
+
+    @Test
+    void shouldGenerateStringContainer() {
+        generate(StringContainers.class);
+
+        then(generated(StringContainers.class)).isEqualTo("""
+                package com.github.t1.jsonbap.impl;
+                
+                import java.lang.reflect.Type;
+                
+                import javax.annotation.processing.Generated;
+                
+                import com.github.t1.jsonbap.runtime.FluentParser;
+                
+                import jakarta.json.bind.serializer.DeserializationContext;
+                import jakarta.json.bind.serializer.JsonbDeserializer;
+                import jakarta.json.stream.JsonParser;
+                import jakarta.json.stream.JsonParser.Event;
+                
+                @Generated("com.github.t1.jsonbap.impl.JsonbAnnotationProcessor")
+                public class JsonbDeserializerGeneratorTest$StringContainers$$JsonbDeserializer implements JsonbDeserializer<JsonbDeserializerGeneratorTest$StringContainers> {
+                
+                    @Override
+                    public JsonbDeserializerGeneratorTest$StringContainers deserialize(JsonParser jsonParser, DeserializationContext ctx, Type rtType) {
+                        var parser = new FluentParser(jsonParser);
+                        if (parser.is(Event.VALUE_NULL)) return null;
+                        var object = new JsonbDeserializerGeneratorTest$StringContainers();
+                        parser.assume(Event.START_OBJECT);
+                        while (parser.next().is(Event.KEY_NAME)) {
+                            switch (parser.StringAndNext()) {
+                                case "element" -> object.setElement(parser.deserialize(ctx, JsonbDeserializerGeneratorTest$StringContainer.class));
+                            }
+                        }
+                        parser.assume(Event.END_OBJECT);
+                        return object;
+                    }
+                }
+                """);
+    }
+
+
     public static class StringContainerArraySerializer implements JsonbSerializer<StringContainer[]> {
         @Override
         public void serialize(StringContainer[] obj, JsonGenerator generator, SerializationContext ctx) {
