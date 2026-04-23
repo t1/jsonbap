@@ -2,7 +2,7 @@ package tck;
 
 import com.github.t1.jsonbap.api.Bindable;
 
-@Bindable(value = {
+@Bindable(serializable = false, deserializable = false, value = { // not this class, only the classes listed below
         ee.jakarta.tck.json.bind.api.model.SimpleAnnotatedDateContainer.class,
         ee.jakarta.tck.json.bind.api.model.SimpleAnnotatedDoubleContainer.class,
         ee.jakarta.tck.json.bind.api.model.SimpleAnnotatedNillableContainer.class,
@@ -99,6 +99,7 @@ import com.github.t1.jsonbap.api.Bindable;
         ee.jakarta.tck.json.bind.defaultmapping.enums.model.EnumContainer.Enumeration.class,
         ee.jakarta.tck.json.bind.defaultmapping.enums.model.EnumContainer.class,
         ee.jakarta.tck.json.bind.defaultmapping.generics.model.MultipleBoundsContainer.class,
+        ee.jakarta.tck.json.bind.defaultmapping.generics.model.StringContainer.class,
         ee.jakarta.tck.json.bind.defaultmapping.identifiers.model.StringContainer.class,
         ee.jakarta.tck.json.bind.defaultmapping.polymorphictypes.AnnotationTypeInfoTest.Animal.class,
         ee.jakarta.tck.json.bind.defaultmapping.polymorphictypes.AnnotationTypeInfoTest.Cat.class,

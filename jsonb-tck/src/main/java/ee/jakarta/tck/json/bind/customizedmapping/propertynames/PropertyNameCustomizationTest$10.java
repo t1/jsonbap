@@ -3,7 +3,7 @@ package ee.jakarta.tck.json.bind.customizedmapping.propertynames;
 import com.github.t1.jsonbap.api.Bindable;
 import ee.jakarta.tck.json.bind.customizedmapping.propertynames.model.StringContainer;
 
-import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.UPPER_CAMEL_CASE_WITH_SPACES;
+import static com.github.t1.jsonbap.api.PropertyNamingStrategyEnum.UPPER_CAMEL_CASE_WITH_SPACES;
 
 @Bindable(propertyNamingStrategy = UPPER_CAMEL_CASE_WITH_SPACES, deserializable = false)
 public class PropertyNameCustomizationTest$10 extends StringContainer {
