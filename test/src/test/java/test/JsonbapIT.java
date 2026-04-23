@@ -12,12 +12,12 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.CASE_INSENSITIVE;
-import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.LOWER_CASE_WITH_DASHES;
-import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.LOWER_CASE_WITH_UNDERSCORES;
-import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.UPPER_CAMEL_CASE;
-import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.UPPER_CAMEL_CASE_WITH_SPACES;
-import static com.github.t1.jsonbap.api.Bindable.PropertyNamingStrategyEnum.UPPER_CASE_WITH_UNDERSCORES;
+import static com.github.t1.jsonbap.api.PropertyNamingStrategyEnum.CASE_INSENSITIVE;
+import static com.github.t1.jsonbap.api.PropertyNamingStrategyEnum.LOWER_CASE_WITH_DASHES;
+import static com.github.t1.jsonbap.api.PropertyNamingStrategyEnum.LOWER_CASE_WITH_UNDERSCORES;
+import static com.github.t1.jsonbap.api.PropertyNamingStrategyEnum.UPPER_CAMEL_CASE;
+import static com.github.t1.jsonbap.api.PropertyNamingStrategyEnum.UPPER_CAMEL_CASE_WITH_SPACES;
+import static com.github.t1.jsonbap.api.PropertyNamingStrategyEnum.UPPER_CASE_WITH_UNDERSCORES;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.BDDAssertions.then;

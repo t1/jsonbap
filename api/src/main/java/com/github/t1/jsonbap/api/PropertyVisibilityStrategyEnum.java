@@ -1,62 +1,21 @@
 package com.github.t1.jsonbap.api;
 
-import jakarta.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.config.PropertyVisibilityStrategy;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
- * Allows to define the strategy to derive the JSON field name from a Java property.
- * This never overrides {@link JsonbProperty#value()} annotations.
+ * Allows to define the strategy to decide if a Java property is visible or not.
+ * This never overrides {@link jakarta.json.bind.annotation.JsonbTransient JsonbTransient} annotations.
  */
-public enum PropertyNamingStrategyEnum {
-    /**
-     * Using this strategy, the property name is unchanged from its normally camel case form.
-     *
-     * @see <a href="https://en.wikipedia.org/wiki/Letter_case#Camel_case">Camel case</a>
-     */
-    IDENTITY,
+public enum PropertyVisibilityStrategyEnum implements PropertyVisibilityStrategy {
+    /// This is the default visibility strategy that makes all public getters and setters,
+    /// as well as public fields visible.
+    PUBLIC;
+    // what else?
 
-    /**
-     * Using this strategy, the property name is transformed to lower case with dashes.
-     * The dashes are on the positions of different case boundaries in the original field name (camel case).
-     *
-     * @see <a href="https://en.wikipedia.org/wiki/Letter_case#Kebab_case">Kebab case</a>
-     */
-    LOWER_CASE_WITH_DASHES,
+    @Override public boolean isVisible(Field field) {throw new UnsupportedOperationException("don't call this");}
 
-    /**
-     * Using this strategy, the property name is transformed to lower case with underscores.
-     * The underscores are on the positions of different case boundaries in the original field name (camel case).
-     *
-     * @see <a href="https://en.wikipedia.org/wiki/Letter_case#Snake_case">Snake case</a>
-     */
-    LOWER_CASE_WITH_UNDERSCORES,
-
-    /**
-     * Using this strategy, the property name is transformed to upper case with underscores.
-     * The underscores are on the positions of different case boundaries in the original field name (camel case).
-     *
-     * @see <a href="https://en.wikipedia.org/wiki/Letter_case#Snake_case">Snake case</a>
-     */
-    UPPER_CASE_WITH_UNDERSCORES,
-
-    /**
-     * Using this strategy, the first character will be capitalized.
-     *
-     * @see <a href="https://en.wikipedia.org/wiki/Letter_case#Camel_case">Camel case</a>
-     */
-    UPPER_CAMEL_CASE,
-
-    /**
-     * Using this strategy, the first character will be capitalized and the words
-     * will be separated by spaces.
-     *
-     * @see <a href="https://en.wikipedia.org/wiki/Title_case">Title case (roughly)</a>
-     */
-    UPPER_CAMEL_CASE_WITH_SPACES,
-
-    /**
-     * Using this strategy, the serialization will be same as identity.
-     * Deserialization will be case insensitive. E.g. property in JSON with name
-     * PropertyNAME, will be mapped to field propertyName.
-     */
-    CASE_INSENSITIVE
+    @Override public boolean isVisible(Method method) {throw new UnsupportedOperationException("don't call this");}
 }
