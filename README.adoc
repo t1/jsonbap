@@ -4,6 +4,8 @@
 ====
 This project is in a very early stage and still far from ready for production use.
 Currently, only 21% of the JSON-B TCK tests pass.
+The `jsonb-tck` module is intentionally not a submodule of the parent POM, as most TCK tests still fail and would break the build.
+Build it separately: `cd jsonb-tck && mvn test`.
 ====
 
 `jsonbap` = JSON-B Annotation Processor

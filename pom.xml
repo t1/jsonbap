@@ -12,6 +12,7 @@
         <module>api</module>
         <module>impl</module>
         <module>test</module>
+        <!-- The jsonb-tck module is intentionally not listed here, as most TCK tests still fail and would break the build. Build it separately: cd jsonb-tck && mvn test -->
     </modules>
 
     <properties>
