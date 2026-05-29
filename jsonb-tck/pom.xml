@@ -15,7 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jsbonbap.version>3.0.4-SNAPSHOT</jsbonbap.version>
-        <jakarta.json.bind.version>3.0.1</jakarta.json.bind.version>
+        <jakarta.json.bind.version>3.0.2</jakarta.json.bind.version>
         <jakarta.json.version>2.1.3</jakarta.json.version>
     </properties>
 
